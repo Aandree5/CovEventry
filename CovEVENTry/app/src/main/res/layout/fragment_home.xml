@@ -14,21 +14,6 @@
         android:layout_margin="20px"
         android:gravity="center"/>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Development hash key (Facebook):"
-        android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"
-        android:layout_margin="20px"/>
-
-    <TextView
-        android:id="@+id/home_dev_hashkey"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Key"
-        android:textAppearance="@style/Base.TextAppearance.AppCompat.Title"
-        android:gravity="center"/>
-
     <com.facebook.login.widget.LoginButton
         android:id="@+id/login_button"
         android:layout_width="wrap_content"
