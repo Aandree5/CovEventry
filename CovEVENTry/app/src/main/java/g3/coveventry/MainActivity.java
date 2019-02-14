@@ -1,9 +1,9 @@
 package g3.coveventry;
 
+import android.annotation.SuppressLint;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -16,10 +16,10 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.facebook.Profile;
 import com.facebook.ProfileTracker;
-import com.facebook.login.widget.ProfilePictureView;
 
 import java.security.MessageDigest;
 
@@ -63,31 +63,44 @@ public class MainActivity extends AppCompatActivity {
 
         // Set navigation view listener
         navigationView = findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-                int id = menuItem.getItemId();
+        navigationView.setNavigationItemSelectedListener(menuItem -> {
+            // Prevent reselection
+            if (navigationView.getCheckedItem() == menuItem)
+                return false;
 
-                // Button actions
-                if (id == R.id.nav_home) {
+            switch (menuItem.getItemId())
+            {
+                case R.id.nav_home:
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new HomeFragment())
+                            .commit();
+                    break;
 
-                } else if (id == R.id.nav_gallery) {
+                case R.id.nav_facebook_events:
+                    Toast.makeText(getApplicationContext(), "Load facebook events fragment", Toast.LENGTH_SHORT).show();
+                    break;
 
-                } else if (id == R.id.nav_slideshow) {
+                case R.id.nav_twitter_events:
+                    Toast.makeText(getApplicationContext(), "Load twitter events fragment", Toast.LENGTH_SHORT).show();
+                    break;
 
-                } else if (id == R.id.nav_manage) {
+                case R.id.nav_map:
+                    Toast.makeText(getApplicationContext(), "Load map fragment", Toast.LENGTH_SHORT).show();
+                    break;
 
-                } else if (id == R.id.nav_share) {
+                case R.id.nav_database:
+                    Toast.makeText(getApplicationContext(), "Load database fragment", Toast.LENGTH_SHORT).show();
+                    break;
 
-                } else if (id == R.id.nav_send) {
-
-                }
-
-                // Close drawer
-                drawer.closeDrawer(GravityCompat.START);
-
-                return true;
+                case R.id.nav_settings:
+                    Toast.makeText(getApplicationContext(), "Open settings page", Toast.LENGTH_SHORT).show();
+                    break;
             }
+
+            // Close drawer after choosing an option
+            drawer.closeDrawer(GravityCompat.START);
+
+            return true;
         });
 
 
@@ -102,13 +115,13 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-
+        //TODO: Load data from logged user
         // Load menu_toolbar fragment
         if(savedInstanceState == null)
         {
            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
-                    .commit();
+                .replace(R.id.fragment_container, new HomeFragment())
+                .commit();
 
             navigationView.setCheckedItem(R.id.nav_home);
 
@@ -124,8 +137,9 @@ public class MainActivity extends AppCompatActivity {
 
 
         // DEBUG
-        // Development hash key
+        // Development hash key (Facebook)
         try {
+            @SuppressLint("PackageManagerGetSignatures")
             final PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
             for (android.content.pm.Signature signature : info.signatures) {
                 final MessageDigest md = MessageDigest.getInstance("SHA");
