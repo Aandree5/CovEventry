@@ -1,17 +1,15 @@
 package g3.coveventry;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
@@ -25,18 +23,13 @@ import com.facebook.login.widget.LoginButton;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Objects;
 
-import g3.coveventry.customViews.RoundImage;
-
-import static g3.coveventry.MainActivity.loginForm;
-import static g3.coveventry.MainActivity.userEmail;
-import static g3.coveventry.MainActivity.userID;
-import static g3.coveventry.MainActivity.userName;
+import static g3.coveventry.User.KEY_EMAIL;
+import static g3.coveventry.User.KEY_FACEBOOKID;
+import static g3.coveventry.User.KEY_NAME;
+import static g3.coveventry.User.KEY_PHOTOURL;
 
 
 public class HomeFragment extends Fragment {
@@ -62,6 +55,8 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onSuccess(final LoginResult loginResult) {
 
+                        Toast.makeText(getContext(), "Login successful", Toast.LENGTH_SHORT).show();
+
                         // If login is successful, create the request for the needed user data
                         Bundle params = new Bundle();
                         params.putString("fields", "name,email,picture.type(normal)");
@@ -69,29 +64,27 @@ public class HomeFragment extends Fragment {
                             if (response != null) {
                                 try {
                                     JSONObject data = response.getJSONObject();
+                                    String photoUrl = null;
 
-                                    // Find drawer header
-                                    NavigationView navigationView = Objects.requireNonNull(getActivity()).findViewById(R.id.nav_view);
-                                    View navHeader = navigationView.getHeaderView(0);
+                                    // Get photo URL
+                                    if (data.has("picture"))
+                                        photoUrl = data.getJSONObject("picture").getJSONObject("data").getString("url");
 
                                     // Save user info
-                                    userID = loginResult.getAccessToken().getUserId();
-                                    userName = data.getString("name");
-                                    loginForm = MainActivity.LoginForm.LF_FACEBOOK;
-                                    userEmail = data.getString("email");
+                                    SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext())).edit();
+                                    sharedPreferences.putString(KEY_FACEBOOKID, loginResult.getAccessToken().getUserId());
+                                    sharedPreferences.putString(KEY_NAME, data.getString("name"));
+                                    sharedPreferences.putString(KEY_EMAIL, data.getString("email"));
 
-                                    // Set user info
-                                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(userName);
+                                    // Only save photo url if there was one
+                                    if (photoUrl != null)
+                                        sharedPreferences.putString(KEY_PHOTOURL, photoUrl);
 
-                                    if (data.has("picture")) {
-                                        // Get photo URL
-                                        URL photoURL = new URL(data.getJSONObject("picture").getJSONObject("data").getString("url"));
+                                    sharedPreferences.apply();
 
-                                        // Start background task to download image
-                                        new DownloadUserPhoto(new WeakReference<>(navHeader.findViewById(R.id.nav_header_photo)))
-                                                .execute(photoURL);
-                                    }
-                                } catch (IOException | JSONException e) {
+                                    ((MainActivity)Objects.requireNonNull(getActivity())).createUser();
+
+                                } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
                             }
@@ -116,48 +109,5 @@ public class HomeFragment extends Fragment {
         // Send data to facebook sdk to be checked
         callbackManager.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
-    }
-
-
-    /**
-     * Downloads an image from the given URL to the given RoundImage view
-     */
-    public static class DownloadUserPhoto extends AsyncTask<URL, Void, Bitmap> {
-        WeakReference<RoundImage> rndImgView;
-
-        /**
-         * With a reference to a RoundImage view where to put the downloaded image
-         *
-         * @param rndImgView Weak reference to the RoundImage view
-         */
-        DownloadUserPhoto(WeakReference<RoundImage> rndImgView) {
-            this.rndImgView = rndImgView;
-        }
-
-        @Override
-        protected Bitmap doInBackground(URL... urls) {
-
-            try {
-                //TODO:Save image to file
-                // Download photo from url
-                return BitmapFactory.decodeStream(urls[0].openConnection().getInputStream());
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-
-            RoundImage riView = rndImgView.get();
-            if (bitmap != null && riView != null) {
-                // Set user photo
-                riView.setImageBitmap(bitmap);
-            }
-        }
     }
 }

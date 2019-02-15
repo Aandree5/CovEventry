@@ -1,9 +1,12 @@
 package g3.coveventry;
 
 import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -21,28 +24,28 @@ import android.widget.Toast;
 import com.facebook.Profile;
 import com.facebook.ProfileTracker;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.MessageDigest;
 
-import g3.coveventry.customViews.RoundImage;
+import g3.coveventry.customViews.CovImageView;
+
+import static g3.coveventry.User.FILE_USER_PHOTO;
+import static g3.coveventry.User.KEY_EMAIL;
+import static g3.coveventry.User.KEY_FACEBOOKID;
+import static g3.coveventry.User.KEY_NAME;
+import static g3.coveventry.User.KEY_PHOTOURL;
 
 
 public class MainActivity extends AppCompatActivity {
-
-    public static String userID = null;
-    public static String userName = null;
-    public static String userEmail = null;
-    public static LoginForm loginForm = LoginForm.LF_NONE;
-
-    // Possible login forms
-    enum LoginForm{
-        LF_NONE,
-        LF_FACEBOOK,
-        LF_TWITTER,
-        LF_GOOGLE
-    }
-
+    // Keep user info
+    User user;
     ProfileTracker profileTracker;
     NavigationView navigationView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,32 +111,47 @@ public class MainActivity extends AppCompatActivity {
         profileTracker = new ProfileTracker() {
             @Override
             protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
+                // Catch user logging out
                 if (currentProfile == null)
                 {
-                    userLoggedOut();
+                    // Reset all user related information
+                    user = null;
+
+                    SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
+                    sharedPreferences.remove(KEY_FACEBOOKID);
+                    sharedPreferences.remove(KEY_NAME);
+                    sharedPreferences.remove(KEY_EMAIL);
+                    sharedPreferences.remove(KEY_PHOTOURL);
+                    sharedPreferences.apply();
+
+                    // Delete user photo file
+                    //noinspection ResultOfMethodCallIgnored
+                    new File(FILE_USER_PHOTO).delete();
+
+                    // Find drawer header
+                    View navHeader = navigationView.getHeaderView(0);
+
+                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getString(R.string.nav_header_name_guest));
+                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
                 }
             }
         };
 
-        //TODO: Load data from logged user
-        // Load menu_toolbar fragment
+
         if(savedInstanceState == null)
         {
+            // Load default fragment on start up
            getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, new HomeFragment())
                 .commit();
 
             navigationView.setCheckedItem(R.id.nav_home);
-
-        } else if (userName != null) {
-
-            View navHeader = navigationView.getHeaderView(0);
-
-            //TODO: load image from file
-
-            ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(userName);
-            ((RoundImage) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
         }
+
+        // If user is logged in, create object and show information called for
+        // app start up and when phone is rotated or brought back from background
+        if(Profile.getCurrentProfile() != null)
+            createUser();
 
 
         // DEBUG
@@ -161,20 +179,6 @@ public class MainActivity extends AppCompatActivity {
         profileTracker.stopTracking();
     }
 
-    /**
-     * Logout user from the app
-     */
-    private void userLoggedOut() {
-        userID = null;
-        userName = null;
-        userEmail = null;
-        loginForm = LoginForm.LF_NONE;
-
-        View navHeader = navigationView.getHeaderView(0);
-
-        ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText("Guest");
-        ((RoundImage) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
-    }
 
     @Override
     public void onBackPressed() {
@@ -204,5 +208,52 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    void createUser(){
+        // Find drawer header
+        View navHeader = navigationView.getHeaderView(0);
+
+        // Create new user object from shared preferences information
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+
+        user = new User(sharedPreferences.getString(KEY_FACEBOOKID, null), sharedPreferences.getString(KEY_NAME, null),
+                sharedPreferences.getString(KEY_EMAIL, null));
+
+        // Show user name
+        ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(user.name);
+
+
+        // Get photo from file, if was already downloaded, otherwise download it from the kept link
+        if(new File(FILE_USER_PHOTO).exists()) {
+            FileInputStream fInpStream = null;
+            try {
+                fInpStream = openFileInput(FILE_USER_PHOTO);
+
+                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).setImageBitmap(BitmapFactory.decodeStream(fInpStream));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+
+            } finally {
+                if (fInpStream != null) {
+                    try {
+                        fInpStream.close();
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
+            try {
+                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)),
+                        FILE_USER_PHOTO);
+
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

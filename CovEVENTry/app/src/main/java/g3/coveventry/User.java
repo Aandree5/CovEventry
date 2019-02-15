@@ -1,0 +1,33 @@
+package g3.coveventry;
+
+import android.app.Activity;
+import android.app.Application;
+import android.content.Context;
+import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
+import android.view.View;
+import android.widget.TextView;
+
+import java.util.Objects;
+
+import g3.coveventry.customViews.CovImageView;
+
+class User {
+    static final String FILE_USER_PHOTO = "userPhoto.png";
+
+    static final String KEY_FACEBOOKID = "facebookID";
+    static final String KEY_NAME = "name";
+    static final String KEY_EMAIL = "email";
+    static final String KEY_PHOTOURL = "photoUrl";
+
+    String facebookID = null;
+    String name = null;
+    String email = null;
+
+    public User(String facebookID, String name, String email) {
+        this.facebookID = facebookID;
+        this.name = name;
+        this.email = email;
+    }
+}
