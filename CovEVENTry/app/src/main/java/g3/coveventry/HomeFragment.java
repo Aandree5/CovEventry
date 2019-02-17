@@ -9,7 +9,6 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
@@ -43,7 +42,7 @@ import static g3.coveventry.User.KEY_TWITTERUSERNAME;
 
 public class HomeFragment extends Fragment {
 
-    // Callback for Facebook login
+    // Login buttons
     TwitterLoginButton twitterLoginButton;
     FacebookLoginButton facebookLoginButton;
 
@@ -53,19 +52,18 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
         facebookLoginButton = view.findViewById(R.id.login_facebook);
+        twitterLoginButton = view.findViewById(R.id.login_twitter);
+
 
         // Facebook login
         facebookLoginButton.setCallback(new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(final LoginResult loginResult) {
 
-                Toast.makeText(getContext(), "Login successful", Toast.LENGTH_SHORT).show();
-
                 // If login is successful, create the request for the needed user data
                 Bundle params = new Bundle();
                 params.putString("fields", "name,email,picture.type(normal)");
 
-                // TODO: Test GraphRequestAsyncTask to get user photo
                 new GraphRequest(loginResult.getAccessToken(), "me", params, HttpMethod.GET, response -> {
                     if (response != null) {
                         try {
@@ -81,11 +79,14 @@ public class HomeFragment extends Fragment {
                             sharedPreferences.putString(KEY_FACEBOOKID, loginResult.getAccessToken().getUserId());
                             sharedPreferences.putString(KEY_NAME, data.getString("name"));
 
+                            // Get previous saved emails
                             Set<String> emails = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext())).getStringSet(KEY_EMAILS, null);
 
+                            // If there was none, create a new set, otherwise add to the previous set
                             if (emails != null) {
                                 emails.add(data.getString("email"));
                                 sharedPreferences.putStringSet(KEY_EMAILS, emails).apply();
+
                             } else {
                                 sharedPreferences.putStringSet(KEY_EMAILS, new HashSet<>(Collections.singletonList(data.getString("email")))).apply();
                             }
@@ -96,7 +97,8 @@ public class HomeFragment extends Fragment {
 
                             sharedPreferences.apply();
 
-                            ((MainActivity) Objects.requireNonNull(getActivity())).createUser();
+                            // Tell main activity user information has been updated
+                            ((MainActivity) Objects.requireNonNull(getActivity())).updateUser();
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -115,23 +117,23 @@ public class HomeFragment extends Fragment {
         });
 
         // Twitter login
-        twitterLoginButton = view.findViewById(R.id.login_twitter);
-
-
         twitterLoginButton.setCallback(new Callback<TwitterSession>() {
             @Override
             public void success(Result<TwitterSession> result) {
-                TwitterAuthClient twitterAuthClient = new TwitterAuthClient();
-                twitterAuthClient.requestEmail(result.data, new Callback<String>() {
+                // Create request to retreive user email
+                new TwitterAuthClient().requestEmail(result.data, new Callback<String>() {
                     @Override
                     public void success(Result<String> result) {
-                        // Save email
                         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext()));
+
+                        // Get previous saved emails
                         Set<String> emails = sharedPreferences.getStringSet(KEY_EMAILS, null);
 
+                        // If there was none, create a new set, otherwise add to the previous set
                         if (emails != null) {
                             emails.add(result.data);
                             sharedPreferences.edit().putStringSet(KEY_EMAILS, emails).apply();
+
                         } else {
                             sharedPreferences.edit().putStringSet(KEY_EMAILS, new HashSet<>(Collections.singletonList(result.data))).apply();
                         }
@@ -162,10 +164,8 @@ public class HomeFragment extends Fragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-
-        // Send data to facebook sdk to be checked
+        // Pass the activity result to the login buttons
         facebookLoginButton.onActivityResult(requestCode, resultCode, data);
-        // Pass the activity result to the login button
         twitterLoginButton.onActivityResult(requestCode, resultCode, data);
 
         super.onActivityResult(requestCode, resultCode, data);

@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
         // If user is logged in, create object and show information called for
         // app start up and when phone is rotated or brought back from background
         if(Profile.getCurrentProfile() != null)
-            createUser();
+            updateUser();
 
 
         // DEBUG
@@ -230,15 +230,14 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // Pass the activity result to the fragment, which will then pass the result to the login
-        // button.
+        // Pass the activity result to the fragment, which will then pass the result to the login buttons
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         if (fragment != null) {
             fragment.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    void createUser(){
+    void updateUser() {
         // Find drawer header
         View navHeader = navigationView.getHeaderView(0);
 

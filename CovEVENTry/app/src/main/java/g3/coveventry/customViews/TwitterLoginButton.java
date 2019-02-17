@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
@@ -43,7 +44,7 @@ public class TwitterLoginButton extends BaseLoginButton {
 
         setBackground(res.getDrawable(R.drawable.dr_login_twitter, getContext().getTheme()));
 
-        setText(getResources().getString(R.string.login_twitter));
+        setText(res.getString(R.string.login_twitter));
 
         // Prevent code to run on the editor, allow to visualize the button
         if (!isInEditMode()) {
@@ -51,7 +52,7 @@ public class TwitterLoginButton extends BaseLoginButton {
             TwitterSession twitterSession = TwitterCore.getInstance().getSessionManager().getActiveSession();
 
             if (twitterSession != null)
-                setText(getResources().getString(R.string.logout));
+                setText(res.getString(R.string.logout));
 
             // Check needed initialization
             checkTwitterCore();
@@ -71,7 +72,9 @@ public class TwitterLoginButton extends BaseLoginButton {
                     @Override
                     public void success(Result<TwitterSession> result) {
                         // Update text
-                        setText(getResources().getString(R.string.logout));
+                        setText(res.getString(R.string.logout));
+
+                        Toast.makeText(getContext(), res.getString(R.string.login_successful), Toast.LENGTH_SHORT).show();
 
                         callback.success(result);
                     }
@@ -85,7 +88,7 @@ public class TwitterLoginButton extends BaseLoginButton {
                 TwitterCore.getInstance().getSessionManager().clearActiveSession();
 
                 // Update text
-                setText(getResources().getString(R.string.login_twitter));
+                setText(res.getString(R.string.login_twitter));
             }
         });
     }

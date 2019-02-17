@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
@@ -48,13 +49,13 @@ public class FacebookLoginButton extends BaseLoginButton {
 
         setBackground(res.getDrawable(R.drawable.dr_login_facebook, getContext().getTheme()));
 
-        setText(getResources().getString(R.string.login_facebook));
+        setText(res.getString(R.string.login_facebook));
 
         // Prevent code to run on the editor, allow to visualize the button
         if (!isInEditMode()) {
             // If user was already logged in, change the text to "Log out"
             if (Profile.getCurrentProfile() != null)
-                setText(getResources().getString(R.string.logout));
+                setText(res.getString(R.string.logout));
 
             // Create the callback manager to handle the callback call, and register with the login manager
             // callback just to update the text on success and send the call through the next callback
@@ -63,8 +64,10 @@ public class FacebookLoginButton extends BaseLoginButton {
                 @Override
                 public void onSuccess(LoginResult loginResult) {
                     // Update text
-                    setText(getResources().getString(R.string.logout));
+                    setText(res.getString(R.string.logout));
 
+
+                    Toast.makeText(getContext(), res.getString(R.string.login_successful), Toast.LENGTH_SHORT).show();
                     callback.onSuccess(loginResult);
                 }
 
@@ -96,7 +99,7 @@ public class FacebookLoginButton extends BaseLoginButton {
                 LoginManager.getInstance().logOut();
 
                 // Update text, there's no callback on log out, so the text has to be updated here
-                setText(getResources().getString(R.string.login_facebook));
+                setText(res.getString(R.string.login_facebook));
             }
         });
     }

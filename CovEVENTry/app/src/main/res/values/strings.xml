@@ -11,6 +11,7 @@
     <string name="login_twitter">Connect to Twitter</string>
 
     <string name="logout">Log out</string>
+    <string name="login_successful">Login successful</string>
 
     <string name="nav_header_name_guest">Guest</string>
 </resources>
