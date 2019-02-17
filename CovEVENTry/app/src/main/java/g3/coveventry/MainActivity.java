@@ -146,13 +146,11 @@ public class MainActivity extends AppCompatActivity {
 
 
         // Initialize twitter API
-        TwitterConfig config = new TwitterConfig.Builder(this)
+        Twitter.initialize(new TwitterConfig.Builder(this)
                 .logger(new DefaultLogger(Log.DEBUG)) // Enable logging when app is in debug mode
                 .twitterAuthConfig(new TwitterAuthConfig(getResources().getString(R.string.TWITTER_KEY), getResources().getString(R.string.TWITTER_SECRET)))
                 .debug(true) // Enable debug mode
-                .build();
-
-        Twitter.initialize(config);
+                .build());
 
         if(savedInstanceState == null)
         {

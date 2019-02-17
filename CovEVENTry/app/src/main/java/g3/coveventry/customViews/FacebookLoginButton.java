@@ -1,5 +1,6 @@
 package g3.coveventry.customViews;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -44,10 +45,10 @@ public class FacebookLoginButton extends BaseLoginButton {
 
         // Set Facebook specific logo, color and text
         Resources res = getResources();
-        setCompoundDrawablesWithIntrinsicBounds(res.getDrawable(R.drawable.ic_logo_facebook, getContext().getTheme()),
+        setCompoundDrawablesWithIntrinsicBounds(res.getDrawable(R.drawable.ic_logo_facebook, context.getTheme()),
                 null, null, null);
 
-        setBackground(res.getDrawable(R.drawable.dr_login_facebook, getContext().getTheme()));
+        setBackground(res.getDrawable(R.drawable.dr_login_facebook, context.getTheme()));
 
         setText(res.getString(R.string.login_facebook));
 
@@ -67,7 +68,7 @@ public class FacebookLoginButton extends BaseLoginButton {
                     setText(res.getString(R.string.logout));
 
 
-                    Toast.makeText(getContext(), res.getString(R.string.login_successful), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, res.getString(R.string.login_successful), Toast.LENGTH_SHORT).show();
                     callback.onSuccess(loginResult);
                 }
 
@@ -96,10 +97,19 @@ public class FacebookLoginButton extends BaseLoginButton {
                 LoginManager.getInstance().logInWithReadPermissions(getActivity(), Arrays.asList("public_profile", "email"));
 
             } else {
-                LoginManager.getInstance().logOut();
+                // Show dialog to confirm logout
+                new AlertDialog.Builder(context)
+                        .setMessage(String.format(res.getString(R.string.logged_in_as), "sd"))
+                        .setCancelable(true)
+                        .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
+                            LoginManager.getInstance().logOut();
 
-                // Update text, there's no callback on log out, so the text has to be updated here
-                setText(res.getString(R.string.login_facebook));
+                            // Update text, there's no callback on log out, so the text has to be updated here
+                            setText(res.getString(R.string.login_facebook));
+                        })
+                        .setNegativeButton(res.getString(R.string.cancel), null)
+                        .create()
+                        .show();
             }
         });
     }

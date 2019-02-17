@@ -1,5 +1,6 @@
 package g3.coveventry.customViews;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -39,10 +40,10 @@ public class TwitterLoginButton extends BaseLoginButton {
 
         // Set Twitter specific logo, color and text
         Resources res = getResources();
-        setCompoundDrawablesWithIntrinsicBounds(res.getDrawable(R.drawable.ic_logo_twitter, getContext().getTheme()),
+        setCompoundDrawablesWithIntrinsicBounds(res.getDrawable(R.drawable.ic_logo_twitter, context.getTheme()),
                 null, null, null);
 
-        setBackground(res.getDrawable(R.drawable.dr_login_twitter, getContext().getTheme()));
+        setBackground(res.getDrawable(R.drawable.dr_login_twitter, context.getTheme()));
 
         setText(res.getString(R.string.login_twitter));
 
@@ -74,7 +75,7 @@ public class TwitterLoginButton extends BaseLoginButton {
                         // Update text
                         setText(res.getString(R.string.logout));
 
-                        Toast.makeText(getContext(), res.getString(R.string.login_successful), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(context, res.getString(R.string.login_successful), Toast.LENGTH_SHORT).show();
 
                         callback.success(result);
                     }
@@ -85,10 +86,20 @@ public class TwitterLoginButton extends BaseLoginButton {
                     }
                 });
             } else {
-                TwitterCore.getInstance().getSessionManager().clearActiveSession();
+                // Show dialog to confirm logout
+                new AlertDialog.Builder(context)
+                        .setMessage(String.format(res.getString(R.string.logged_in_as), "sd"))
+                        .setCancelable(true)
+                        .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
+                            TwitterCore.getInstance().getSessionManager().clearActiveSession();
 
-                // Update text
-                setText(res.getString(R.string.login_twitter));
+                            // Update text
+                            setText(res.getString(R.string.login_twitter));
+                        })
+                        .setNegativeButton(res.getString(R.string.cancel), null)
+                        .create()
+                        .show();
+
             }
         });
     }
