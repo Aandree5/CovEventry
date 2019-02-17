@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.util.Objects;
+import java.util.Set;
 
 import g3.coveventry.customViews.CovImageView;
 
@@ -18,14 +19,16 @@ class User {
 
     static final String KEY_FACEBOOKID = "facebookID";
     static final String KEY_NAME = "name";
-    static final String KEY_EMAIL = "email";
+    static final String KEY_EMAILS = "email";
     static final String KEY_PHOTOURL = "photoUrl";
+    static final String KEY_TWITTERID = "twitterID";
+    static final String KEY_TWITTERUSERNAME = "twiterUsername";
 
     String facebookID = null;
     String name = null;
-    String email = null;
+    Set<String> email = null;
 
-    public User(String facebookID, String name, String email) {
+    public User(String facebookID, String name, Set<String> email) {
         this.facebookID = facebookID;
         this.name = name;
         this.email = email;

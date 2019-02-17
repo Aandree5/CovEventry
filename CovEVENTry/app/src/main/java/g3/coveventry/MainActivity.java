@@ -1,12 +1,14 @@
 package g3.coveventry;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.Fragment;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -23,6 +25,10 @@ import android.widget.Toast;
 
 import com.facebook.Profile;
 import com.facebook.ProfileTracker;
+import com.twitter.sdk.android.core.DefaultLogger;
+import com.twitter.sdk.android.core.Twitter;
+import com.twitter.sdk.android.core.TwitterAuthConfig;
+import com.twitter.sdk.android.core.TwitterConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -34,7 +40,7 @@ import java.security.MessageDigest;
 import g3.coveventry.customViews.CovImageView;
 
 import static g3.coveventry.User.FILE_USER_PHOTO;
-import static g3.coveventry.User.KEY_EMAIL;
+import static g3.coveventry.User.KEY_EMAILS;
 import static g3.coveventry.User.KEY_FACEBOOKID;
 import static g3.coveventry.User.KEY_NAME;
 import static g3.coveventry.User.KEY_PHOTOURL;
@@ -74,17 +80,18 @@ public class MainActivity extends AppCompatActivity {
             switch (menuItem.getItemId())
             {
                 case R.id.nav_home:
+                    toolbar.setTitle(R.string.app_name);
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, new HomeFragment())
                             .commit();
                     break;
 
-                case R.id.nav_facebook_events:
-                    Toast.makeText(getApplicationContext(), "Load facebook events fragment", Toast.LENGTH_SHORT).show();
-                    break;
-
-                case R.id.nav_twitter_events:
-                    Toast.makeText(getApplicationContext(), "Load twitter events fragment", Toast.LENGTH_SHORT).show();
+                case R.id.nav_events:
+                    toolbar.setTitle("Events");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new EventsFragment())
+                            .addToBackStack(null)
+                            .commit();
                     break;
 
                 case R.id.nav_map:
@@ -120,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
                     SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
                     sharedPreferences.remove(KEY_FACEBOOKID);
                     sharedPreferences.remove(KEY_NAME);
-                    sharedPreferences.remove(KEY_EMAIL);
+                    sharedPreferences.remove(KEY_EMAILS);
                     sharedPreferences.remove(KEY_PHOTOURL);
                     sharedPreferences.apply();
 
@@ -137,6 +144,15 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
+
+        // Initialize twitter API
+        TwitterConfig config = new TwitterConfig.Builder(this)
+                .logger(new DefaultLogger(Log.DEBUG)) // Enable logging when app is in debug mode
+                .twitterAuthConfig(new TwitterAuthConfig(getResources().getString(R.string.TWITTER_KEY), getResources().getString(R.string.TWITTER_SECRET)))
+                .debug(true) // Enable debug mode
+                .build();
+
+        Twitter.initialize(config);
 
         if(savedInstanceState == null)
         {
@@ -210,6 +226,18 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Pass the activity result to the fragment, which will then pass the result to the login
+        // button.
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        if (fragment != null) {
+            fragment.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
     void createUser(){
         // Find drawer header
         View navHeader = navigationView.getHeaderView(0);
@@ -218,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 
         user = new User(sharedPreferences.getString(KEY_FACEBOOKID, null), sharedPreferences.getString(KEY_NAME, null),
-                sharedPreferences.getString(KEY_EMAIL, null));
+                sharedPreferences.getStringSet(KEY_EMAILS, null));
 
         // Show user name
         ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(user.name);

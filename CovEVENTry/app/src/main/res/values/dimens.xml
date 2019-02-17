@@ -5,4 +5,10 @@
     <dimen name="nav_header_vertical_spacing">8dp</dimen>
     <dimen name="nav_header_height">176dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
+    <dimen name="login_btn_drawable_padding">4dp</dimen>
+    <dimen name="login_btn_left_padding">8dp</dimen>
+    <dimen name="login_btn_right_padding">12dp</dimen>
+    <dimen name="login_btn_text_size">14sp</dimen>
+    <dimen name="login_btn_radius">10dp</dimen>
 </resources>
