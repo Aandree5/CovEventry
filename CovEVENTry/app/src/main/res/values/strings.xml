@@ -5,4 +5,5 @@
 
     <string name="FACEBOOK_API_ID">2202969129954888</string>
     <string name="FB_LOGIN_PROTOCOL_SCHEME">fb2202969129954888</string>
+    <string name="nav_header_name_guest">Guest</string>
 </resources>
