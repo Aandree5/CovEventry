@@ -6,6 +6,9 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.facebook.Profile;
+import com.twitter.sdk.android.core.TwitterCore;
+
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.util.Collections;
@@ -74,6 +77,20 @@ public class User {
             throw new RuntimeException("Activity reference not set, make sure to initialize user first.");
     }
 
+    /**
+     * Confirms if Facebook's and Twitter's SDK still have an active connection, if don't
+     * remove the information from the user
+     */
+    private void checkSocialMediaAPIStatus() {
+        // If has Facebook ID confirm if Facebook SDK still has a profile
+        if (user.facebookID != null && Profile.getCurrentProfile() == null)
+            user.removeFacebook();
+
+        // If has Twitter ID confirm if Twitter SDK still has a session
+        if (user.twitterID != null && TwitterCore.getInstance().getSessionManager().getActiveSession() == null)
+            user.removeTwitter();
+    }
+
 
     /**
      * Initialize user object, setting activity refernce and callback function, updates user
@@ -95,6 +112,9 @@ public class User {
         user.twitterID = sharedPreferences.getString(KEY_TWITTERID, null);
         user.twitterUsername = sharedPreferences.getString(KEY_TWITTERUSERNAME, null);
 
+        // Check SDKs status
+        user.checkSocialMediaAPIStatus();
+
         // If set, run callback function
         if (callback != null)
             callback.dataUpdated();
@@ -110,8 +130,12 @@ public class User {
         if (user.activityRef.get() == null)
             throw new RuntimeException("Activity reference not set, make sure to initialize user first.");
 
+        // Check SDKs status
+        user.checkSocialMediaAPIStatus();
+
         return user;
     }
+
 
     /**
      * Retrieve name
@@ -121,7 +145,6 @@ public class User {
     public String getName() {
         return name;
     }
-
 
     /**
      * Add and email to the set
@@ -134,7 +157,6 @@ public class User {
         persistData();
     }
 
-
     /**
      * Retrieve emails
      *
@@ -143,7 +165,6 @@ public class User {
     public Set<String> getEmails() {
         return Collections.unmodifiableSet(emails);
     }
-
 
     /**
      * Retrieve Facebook ID
@@ -154,7 +175,6 @@ public class User {
         return facebookID;
     }
 
-
     /**
      * Retrieve Twitter ID
      *
@@ -163,7 +183,6 @@ public class User {
     public String getTwitterID() {
         return twitterID;
     }
-
 
     /**
      * Retrieve Twitter username
@@ -180,7 +199,7 @@ public class User {
      *
      * @return True if has user's Facebook data, false otherwise
      */
-    private boolean isFacebookLogged() {
+    public boolean isFacebookConnected() {
         return facebookID != null;
     }
 
@@ -190,7 +209,7 @@ public class User {
      *
      * @return True if has user's Twitter data, false otherwise
      */
-    private boolean isTwitterLogged() {
+    public boolean isTwitterConnected() {
         return twitterID != null;
     }
 
@@ -274,7 +293,7 @@ public class User {
      */
     public void removeFacebook() {
         // If only logged in with Facebook, remove all data, otherwise remove just the Facebook id
-        if (!isTwitterLogged()) {
+        if (!isTwitterConnected()) {
             name = null;
             emails = null;
             facebookID = null;
@@ -319,7 +338,7 @@ public class User {
      */
     public void removeTwitter() {
         // If only logged in with Twitter, remove all data, otherwise remove just the Twitter id and username
-        if (!isFacebookLogged()) {
+        if (!isFacebookConnected()) {
             name = null;
             emails = null;
             twitterID = null;
