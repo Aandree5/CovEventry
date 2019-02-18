@@ -5,5 +5,15 @@
 
     <string name="FACEBOOK_API_ID">2202969129954888</string>
     <string name="FB_LOGIN_PROTOCOL_SCHEME">fb2202969129954888</string>
+    <string name="login_facebook">Connect to facebook</string>
+    <string name="TWITTER_KEY">LjAT1QYgQfulVGzIntUhMjbDO</string>
+    <string name="TWITTER_SECRET">UHKlirlRwcSwPtfyNfGvUVEc0gUBE6FD1ObxRhQg3wBEv0i0rx</string>
+    <string name="login_twitter">Connect to Twitter</string>
+
+    <string name="logout">Log out</string>
+    <string name="login_successful">Login successful</string>
+
     <string name="nav_header_name_guest">Guest</string>
+    <string name="cancel">Cancel</string>
+    <string name="logged_in_as">Currently logged in as %1$s</string>
 </resources>

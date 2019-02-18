@@ -9,13 +9,9 @@
             android:icon="@drawable/ic_menu_home"
             android:title="Home" />
         <item
-            android:id="@+id/nav_facebook_events"
-            android:icon="@drawable/ic_menu_facebook"
-            android:title="Facebook Events" />
-        <item
-            android:id="@+id/nav_twitter_events"
-            android:icon="@drawable/ic_menu_twitter"
-            android:title="Twitter Events" />
+            android:id="@+id/nav_events"
+            android:icon="@drawable/ic_menu_events"
+            android:title="Events" />
         <item
             android:id="@+id/nav_map"
             android:icon="@drawable/ic_menu_map"
