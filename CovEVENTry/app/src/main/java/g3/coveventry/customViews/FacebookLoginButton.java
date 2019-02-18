@@ -94,7 +94,7 @@ public class FacebookLoginButton extends BaseLoginButton {
             if (callback == null)
                 throw new RuntimeException("Callback not set!");
 
-            if (User.getCurrentUser().isFacebookConnected()) {
+            if (!User.getCurrentUser().isFacebookConnected()) {
                 LoginManager.getInstance().logInWithReadPermissions(getActivity(), Arrays.asList("public_profile", "email"));
 
             } else {
