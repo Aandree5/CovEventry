@@ -64,7 +64,7 @@ public class TwitterLoginButton extends BaseLoginButton {
             if (callback == null)
                 throw new RuntimeException("Callback not set!");
 
-            if (User.getCurrentUser().isTwitterConnected()) {
+            if (!User.getCurrentUser().isTwitterConnected()) {
                 // Callback just to update the text on success and send the call through the next callback
                 getTwitterAuthClient().authorize(getActivity(), new Callback<TwitterSession>() {
                     @Override
