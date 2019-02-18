@@ -56,7 +56,7 @@ public class FacebookLoginButton extends BaseLoginButton {
         // Prevent code to run on the editor, allow to visualize the button
         if (!isInEditMode()) {
             // If user was already logged in, change the text to "Log out"
-            if (Profile.getCurrentProfile() != null)
+            if (User.getCurrentUser().isFacebookConnected())
                 setText(res.getString(R.string.logout));
 
             // Create the callback manager to handle the callback call, and register with the login manager
@@ -94,7 +94,7 @@ public class FacebookLoginButton extends BaseLoginButton {
             if (callback == null)
                 throw new RuntimeException("Callback not set!");
 
-            if (Profile.getCurrentProfile() == null) {
+            if (User.getCurrentUser().isFacebookConnected()) {
                 LoginManager.getInstance().logInWithReadPermissions(getActivity(), Arrays.asList("public_profile", "email"));
 
             } else {

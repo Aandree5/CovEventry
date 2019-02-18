@@ -4,12 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
-import android.text.Html;
-import android.text.SpannableStringBuilder;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.Toast;
@@ -56,9 +51,7 @@ public class TwitterLoginButton extends BaseLoginButton {
         // Prevent code to run on the editor, allow to visualize the button
         if (!isInEditMode()) {
             // If user was already logged in, change the text to "Log out"
-            TwitterSession twitterSession = TwitterCore.getInstance().getSessionManager().getActiveSession();
-
-            if (twitterSession != null)
+            if (User.getCurrentUser().isTwitterConnected())
                 setText(res.getString(R.string.logout));
 
             // Check needed initialization
@@ -71,9 +64,7 @@ public class TwitterLoginButton extends BaseLoginButton {
             if (callback == null)
                 throw new RuntimeException("Callback not set!");
 
-            TwitterSession twitterSession = TwitterCore.getInstance().getSessionManager().getActiveSession();
-
-            if (twitterSession == null) {
+            if (User.getCurrentUser().isTwitterConnected()) {
                 // Callback just to update the text on success and send the call through the next callback
                 getTwitterAuthClient().authorize(getActivity(), new Callback<TwitterSession>() {
                     @Override
