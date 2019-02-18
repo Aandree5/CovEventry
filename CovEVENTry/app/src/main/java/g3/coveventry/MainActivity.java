@@ -23,12 +23,12 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.Profile;
-import com.facebook.ProfileTracker;
+import com.facebook.login.widget.LoginButton;
 import com.twitter.sdk.android.core.DefaultLogger;
 import com.twitter.sdk.android.core.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterConfig;
+import com.twitter.sdk.android.core.identity.TwitterLoginButton;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,16 +40,10 @@ import java.security.MessageDigest;
 import g3.coveventry.customViews.CovImageView;
 
 import static g3.coveventry.User.FILE_USER_PHOTO;
-import static g3.coveventry.User.KEY_EMAILS;
-import static g3.coveventry.User.KEY_FACEBOOKID;
-import static g3.coveventry.User.KEY_NAME;
 import static g3.coveventry.User.KEY_PHOTOURL;
 
 
 public class MainActivity extends AppCompatActivity {
-    // Keep user info
-    User user;
-    ProfileTracker profileTracker;
     NavigationView navigationView;
 
 
@@ -114,43 +108,64 @@ public class MainActivity extends AppCompatActivity {
         });
 
 
-        // Keep track of user profile to look out for changes, mainly logging out
-        profileTracker = new ProfileTracker() {
-            @Override
-            protected void onCurrentProfileChanged(Profile oldProfile, Profile currentProfile) {
-                // Catch user logging out
-                if (currentProfile == null)
-                {
-                    // Reset all user related information
-                    user = null;
-
-                    SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit();
-                    sharedPreferences.remove(KEY_FACEBOOKID);
-                    sharedPreferences.remove(KEY_NAME);
-                    sharedPreferences.remove(KEY_EMAILS);
-                    sharedPreferences.remove(KEY_PHOTOURL);
-                    sharedPreferences.apply();
-
-                    // Delete user photo file
-                    //noinspection ResultOfMethodCallIgnored
-                    new File(FILE_USER_PHOTO).delete();
-
-                    // Find drawer header
-                    View navHeader = navigationView.getHeaderView(0);
-
-                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getString(R.string.nav_header_name_guest));
-                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
-                }
-            }
-        };
-
-
         // Initialize twitter API
         Twitter.initialize(new TwitterConfig.Builder(this)
                 .logger(new DefaultLogger(Log.DEBUG)) // Enable logging when app is in debug mode
                 .twitterAuthConfig(new TwitterAuthConfig(getResources().getString(R.string.TWITTER_KEY), getResources().getString(R.string.TWITTER_SECRET)))
                 .debug(true) // Enable debug mode
                 .build());
+
+
+        // Initialize user and register the callback for when data is updated
+        User.initialize(this, new CallbackUserDataUpdated() {
+            @Override
+            public void dataUpdated() {
+                // Find drawer header
+                View navHeader = navigationView.getHeaderView(0);
+
+                // Update user name
+                if (User.getCurrentUser().getName() != null)
+                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(User.getCurrentUser().getName());
+
+                else
+                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getResources().getString(R.string.nav_header_name_guest));
+
+
+                // Get photo from file, if was already downloaded, otherwise download it from the kept link
+                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                if (new File(FILE_USER_PHOTO).exists()) {
+                    FileInputStream fInpStream = null;
+                    try {
+                        fInpStream = openFileInput(FILE_USER_PHOTO);
+
+                        ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
+                                .setImageBitmap(BitmapFactory.decodeStream(fInpStream));
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+
+                    } finally {
+                        if (fInpStream != null) {
+                            try {
+                                fInpStream.close();
+
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                } else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
+                    try {
+                        ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
+                                .setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)), FILE_USER_PHOTO);
+
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
+            }
+        });
 
         if(savedInstanceState == null)
         {
@@ -161,12 +176,6 @@ public class MainActivity extends AppCompatActivity {
 
             navigationView.setCheckedItem(R.id.nav_home);
         }
-
-        // If user is logged in, create object and show information called for
-        // app start up and when phone is rotated or brought back from background
-        if(Profile.getCurrentProfile() != null)
-            updateUser();
-
 
         // DEBUG
         // Development hash key (Facebook)
@@ -182,15 +191,6 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e("AppLog", "error:", e);
         }
-    }
-
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        // Stop profile tracker from running
-        profileTracker.stopTracking();
     }
 
 
@@ -232,53 +232,6 @@ public class MainActivity extends AppCompatActivity {
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         if (fragment != null) {
             fragment.onActivityResult(requestCode, resultCode, data);
-        }
-    }
-
-    void updateUser() {
-        // Find drawer header
-        View navHeader = navigationView.getHeaderView(0);
-
-        // Create new user object from shared preferences information
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-
-        user = new User(sharedPreferences.getString(KEY_FACEBOOKID, null), sharedPreferences.getString(KEY_NAME, null),
-                sharedPreferences.getStringSet(KEY_EMAILS, null));
-
-        // Show user name
-        ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(user.name);
-
-
-        // Get photo from file, if was already downloaded, otherwise download it from the kept link
-        if(new File(FILE_USER_PHOTO).exists()) {
-            FileInputStream fInpStream = null;
-            try {
-                fInpStream = openFileInput(FILE_USER_PHOTO);
-
-                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).setImageBitmap(BitmapFactory.decodeStream(fInpStream));
-
-            } catch (Exception e) {
-                e.printStackTrace();
-
-            } finally {
-                if (fInpStream != null) {
-                    try {
-                        fInpStream.close();
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-        else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
-            try {
-                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)),
-                        FILE_USER_PHOTO);
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
         }
     }
 }

@@ -36,10 +36,10 @@ public class BaseLoginButton extends AppCompatButton {
         setBackgroundColor(Color.BLACK);
 
         // Set padding
-        setCompoundDrawablePadding(res.getDimensionPixelSize(R.dimen.login_btn_drawable_padding));
+        setCompoundDrawablePadding(res.getDimensionPixelSize(R.dimen.login_btn_padding));
         setTextSize(TypedValue.COMPLEX_UNIT_PX, res.getDimensionPixelSize(R.dimen.login_btn_text_size));
         setTypeface(Typeface.DEFAULT_BOLD);
-        setPadding(res.getDimensionPixelSize(R.dimen.login_btn_left_padding), 0, res.getDimensionPixelSize(R.dimen.login_btn_right_padding), 0);
+        setPadding(res.getDimensionPixelSize(R.dimen.login_btn_padding), 0, res.getDimensionPixelSize(R.dimen.login_btn_padding), 0);
 
         // Prevent text from defaulting to caps
         setAllCaps(false);

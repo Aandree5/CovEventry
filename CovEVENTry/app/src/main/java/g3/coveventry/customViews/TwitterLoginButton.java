@@ -4,7 +4,12 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
+import android.text.Html;
+import android.text.SpannableStringBuilder;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.widget.Toast;
@@ -17,6 +22,7 @@ import com.twitter.sdk.android.core.TwitterSession;
 import com.twitter.sdk.android.core.identity.TwitterAuthClient;
 
 import g3.coveventry.R;
+import g3.coveventry.User;
 
 /**
  * Class to handle Twitter's log in and log out
@@ -88,10 +94,13 @@ public class TwitterLoginButton extends BaseLoginButton {
             } else {
                 // Show dialog to confirm logout
                 new AlertDialog.Builder(context)
-                        .setMessage(String.format(res.getString(R.string.logged_in_as), "sd"))
+                        .setTitle("Twitter")
+                        .setMessage(String.format(res.getString(R.string.logged_in_as), User.getCurrentUser().getTwitterUsername()))
                         .setCancelable(true)
                         .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
                             TwitterCore.getInstance().getSessionManager().clearActiveSession();
+
+                            User.getCurrentUser().removeTwitter();
 
                             // Update text
                             setText(res.getString(R.string.login_twitter));

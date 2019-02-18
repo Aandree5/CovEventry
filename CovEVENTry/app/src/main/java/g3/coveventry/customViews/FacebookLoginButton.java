@@ -21,6 +21,7 @@ import com.facebook.login.LoginResult;
 import java.util.Arrays;
 
 import g3.coveventry.R;
+import g3.coveventry.User;
 
 
 /**
@@ -99,10 +100,13 @@ public class FacebookLoginButton extends BaseLoginButton {
             } else {
                 // Show dialog to confirm logout
                 new AlertDialog.Builder(context)
-                        .setMessage(String.format(res.getString(R.string.logged_in_as), "sd"))
+                        .setTitle("Facebook")
+                        .setMessage(String.format(res.getString(R.string.logged_in_as), Profile.getCurrentProfile().getName()))
                         .setCancelable(true)
                         .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
                             LoginManager.getInstance().logOut();
+
+                            User.getCurrentUser().removeFacebook();
 
                             // Update text, there's no callback on log out, so the text has to be updated here
                             setText(res.getString(R.string.login_facebook));

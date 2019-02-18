@@ -17,9 +17,12 @@ import com.facebook.HttpMethod;
 import com.facebook.login.LoginResult;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
+import com.twitter.sdk.android.core.TwitterApiClient;
+import com.twitter.sdk.android.core.TwitterCore;
 import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.TwitterSession;
 import com.twitter.sdk.android.core.identity.TwitterAuthClient;
+import com.twitter.sdk.android.core.services.AccountService;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,6 +34,7 @@ import java.util.Set;
 
 import g3.coveventry.customViews.FacebookLoginButton;
 import g3.coveventry.customViews.TwitterLoginButton;
+import retrofit2.Call;
 
 import static g3.coveventry.User.KEY_EMAILS;
 import static g3.coveventry.User.KEY_FACEBOOKID;
@@ -54,7 +58,6 @@ public class HomeFragment extends Fragment {
         facebookLoginButton = view.findViewById(R.id.login_facebook);
         twitterLoginButton = view.findViewById(R.id.login_twitter);
 
-
         // Facebook login
         facebookLoginButton.setCallback(new FacebookCallback<LoginResult>() {
             @Override
@@ -74,31 +77,9 @@ public class HomeFragment extends Fragment {
                             if (data.has("picture"))
                                 photoUrl = data.getJSONObject("picture").getJSONObject("data").getString("url");
 
-                            // Save user info
-                            SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext())).edit();
-                            sharedPreferences.putString(KEY_FACEBOOKID, loginResult.getAccessToken().getUserId());
-                            sharedPreferences.putString(KEY_NAME, data.getString("name"));
+                            User.getCurrentUser().saveFacebook(loginResult.getAccessToken().getUserId(),
+                                    data.getString("name"), photoUrl, data.getString("email"));
 
-                            // Get previous saved emails
-                            Set<String> emails = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext())).getStringSet(KEY_EMAILS, null);
-
-                            // If there was none, create a new set, otherwise add to the previous set
-                            if (emails != null) {
-                                emails.add(data.getString("email"));
-                                sharedPreferences.putStringSet(KEY_EMAILS, emails).apply();
-
-                            } else {
-                                sharedPreferences.putStringSet(KEY_EMAILS, new HashSet<>(Collections.singletonList(data.getString("email")))).apply();
-                            }
-
-                            // Only save photo url if there was one
-                            if (photoUrl != null)
-                                sharedPreferences.putString(KEY_PHOTOURL, photoUrl);
-
-                            sharedPreferences.apply();
-
-                            // Tell main activity user information has been updated
-                            ((MainActivity) Objects.requireNonNull(getActivity())).updateUser();
 
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -120,37 +101,20 @@ public class HomeFragment extends Fragment {
         twitterLoginButton.setCallback(new Callback<TwitterSession>() {
             @Override
             public void success(Result<TwitterSession> result) {
-                // Create request to retreive user email
-                new TwitterAuthClient().requestEmail(result.data, new Callback<String>() {
+                TwitterApiClient twitterApiClient = TwitterCore.getInstance().getApiClient();
+                AccountService accountService = twitterApiClient.getAccountService();
+                Call<com.twitter.sdk.android.core.models.User> call = accountService.verifyCredentials(true, true, true);
+                call.enqueue(new Callback<com.twitter.sdk.android.core.models.User>() {
                     @Override
-                    public void success(Result<String> result) {
-                        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext()));
-
-                        // Get previous saved emails
-                        Set<String> emails = sharedPreferences.getStringSet(KEY_EMAILS, null);
-
-                        // If there was none, create a new set, otherwise add to the previous set
-                        if (emails != null) {
-                            emails.add(result.data);
-                            sharedPreferences.edit().putStringSet(KEY_EMAILS, emails).apply();
-
-                        } else {
-                            sharedPreferences.edit().putStringSet(KEY_EMAILS, new HashSet<>(Collections.singletonList(result.data))).apply();
-                        }
+                    public void success(Result<com.twitter.sdk.android.core.models.User> userResult) {
+                        User.getCurrentUser().saveTwitter(String.valueOf(result.data.getUserId()), userResult.data.name,
+                                userResult.data.screenName, userResult.data.profileImageUrl, userResult.data.email);
                     }
 
                     @Override
                     public void failure(TwitterException exception) {
-
                     }
                 });
-
-                // Save user info
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Objects.requireNonNull(getContext())).edit();
-                sharedPreferences.putString(KEY_TWITTERID, String.valueOf(result.data.getUserId()));
-                sharedPreferences.putString(KEY_TWITTERUSERNAME, result.data.getUserName());
-
-                sharedPreferences.apply();
             }
 
             @Override

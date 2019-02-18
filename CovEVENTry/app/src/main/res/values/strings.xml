@@ -15,5 +15,5 @@
 
     <string name="nav_header_name_guest">Guest</string>
     <string name="cancel">Cancel</string>
-    <string name="logged_in_as">You are currently logged in as %1$s</string>
+    <string name="logged_in_as">Currently logged in as %1$s</string>
 </resources>
