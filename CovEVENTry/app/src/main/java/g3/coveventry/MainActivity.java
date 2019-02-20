@@ -88,6 +88,13 @@ public class MainActivity extends AppCompatActivity {
                             .commit();
                     break;
 
+                case R.id.nav_AddEvent:
+                    toolbar.setTitle("AddEvent");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new AddEventFragment())
+                            .commit();
+                    break;
+
                 case R.id.nav_map:
                     Toast.makeText(getApplicationContext(), "Load map fragment", Toast.LENGTH_SHORT).show();
                     break;
@@ -99,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.nav_settings:
                     Toast.makeText(getApplicationContext(), "Open settings page", Toast.LENGTH_SHORT).show();
                     break;
+
             }
 
             // Close drawer after choosing an option
@@ -230,7 +238,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Pass the activity result to the fragment, which will then pass the result to the login buttons
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-        if (fragment != null) {
+        if (fragment != null)
+        {
             fragment.onActivityResult(requestCode, resultCode, data);
         }
     }

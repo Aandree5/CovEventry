@@ -13,6 +13,10 @@
             android:icon="@drawable/ic_menu_events"
             android:title="Events" />
         <item
+            android:id="@+id/nav_AddEvent"
+            android:icon="@drawable/ic_add_event"
+            android:title="AddEvent" />
+        <item
             android:id="@+id/nav_map"
             android:icon="@drawable/ic_menu_map"
             android:title="Map" />

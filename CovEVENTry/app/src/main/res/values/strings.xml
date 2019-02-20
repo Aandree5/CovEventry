@@ -16,4 +16,7 @@
     <string name="nav_header_name_guest">Guest</string>
     <string name="cancel">Cancel</string>
     <string name="logged_in_as">Currently logged in as %1$s</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
