@@ -1,13 +1,16 @@
 package g3.coveventry;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.util.Base64;
 import android.util.Log;
@@ -20,6 +23,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,11 +52,18 @@ import static g3.coveventry.User.KEY_PHOTOURL;
 public class MainActivity extends AppCompatActivity {
     NavigationView navigationView;
 
+    ImageView imageView;
+    Button ImageBtn;
+    Button keyboardBtn;
+    private static final int PICK_IMAGE = 100;
+    Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
 
         // Set menu_toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -201,7 +214,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     @Override
     public void onBackPressed() {
         // Close drawer if is open
@@ -238,8 +250,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Pass the activity result to the fragment, which will then pass the result to the login buttons
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-        if (fragment != null)
-        {
+        if (fragment != null) {
             fragment.onActivityResult(requestCode, resultCode, data);
         }
     }
