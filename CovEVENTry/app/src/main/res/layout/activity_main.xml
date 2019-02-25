@@ -9,7 +9,7 @@
     android:fitsSystemWindows="true"
     tools:openDrawer="start">
 
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
@@ -34,6 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="0dp"
             android:layout_marginEnd="0dp"
+            android:layout_gravity="bottom"
             android:background="?attr/colorPrimary"
             app:itemIconTint="@color/colorAccent"
             app:itemTextColor="@color/colorAccent"
@@ -47,7 +48,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 
 
     <android.support.design.widget.NavigationView
