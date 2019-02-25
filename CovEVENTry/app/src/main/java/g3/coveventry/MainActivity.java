@@ -92,9 +92,6 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(), "Load map fragment", Toast.LENGTH_SHORT).show();
                     break;
 
-                case R.id.nav_database:
-                    Toast.makeText(getApplicationContext(), "Load database fragment", Toast.LENGTH_SHORT).show();
-                    break;
 
                 case R.id.nav_settings:
                     Toast.makeText(getApplicationContext(), "Open settings page", Toast.LENGTH_SHORT).show();

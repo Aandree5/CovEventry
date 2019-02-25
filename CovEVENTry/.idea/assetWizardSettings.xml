@@ -143,11 +143,11 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="height" value="619" />
-                            <entry key="outputName" value="ic_map" />
+                            <entry key="height" value="606" />
+                            <entry key="outputName" value="ic_about" />
                             <entry key="overrideSize" value="true" />
-                            <entry key="sourceFile" value="$PROJECT_DIR$/../../Uni/2nd Year/2nd Sem/206CDE (Group Work)/Icons/Map.svg" />
-                            <entry key="width" value="551" />
+                            <entry key="sourceFile" value="$PROJECT_DIR$/../../Uni/2nd Year/2nd Sem/206CDE (Group Work)/Icons/About.svg" />
+                            <entry key="width" value="606" />
                           </map>
                         </option>
                       </PersistentState>
