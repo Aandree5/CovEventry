@@ -93,45 +93,29 @@ public class EventsFragment extends Fragment {
         twitterApi = retrofit.create(TwitterAPI.class);
 
 
-        // TODO: Request permission on app open
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-
-
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 3);
-
-            return null;
-        }
-
         // Start service to retrieve information about user location
         FusedLocationProviderClient locClient = LocationServices.getFusedLocationProviderClient(Objects.requireNonNull(getActivity()));
-        locClient.getLastLocation()
-                .addOnSuccessListener(location -> {
-                    // If location was successfully retrieved, start service to find the city name
-                    if (location != null) {
-                        Intent intent = new Intent(getContext(), FetchAddressIntentService.class);
-                        intent.putExtra(RECEIVER, new AddressResultReceiver());
-                        intent.putExtra(LOCATION_DATA_EXTRA, location);
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locClient.getLastLocation()
+                    .addOnSuccessListener(location -> {
+                        // If location was successfully retrieved, start service to find the city name
+                        if (location != null) {
+                            Intent intent = new Intent(getContext(), FetchAddressIntentService.class);
+                            intent.putExtra(RECEIVER, new AddressResultReceiver());
+                            intent.putExtra(LOCATION_DATA_EXTRA, location);
 
-                        // Start service
-                        Objects.requireNonNull(getActivity()).startService(intent);
-                    }
+                            // Start service
+                            Objects.requireNonNull(getActivity()).startService(intent);
+                        }
 
-                })
-                .addOnFailureListener(e -> {
-                    // On failure log error
-                    Log.e("AppLog", e.getMessage());
-                    e.printStackTrace();
-                });
+                    })
+                    .addOnFailureListener(e -> {
+                        // On failure log error
+                        Log.e("AppLog", e.getMessage());
+                        e.printStackTrace();
+                    });
 
-
-
+        }
 
 
         return view;
@@ -142,8 +126,8 @@ public class EventsFragment extends Fragment {
      * Get the tweets from Twitter, matching the given properties and only from the day
      *
      * @param city City to filter the tweets user location
-     * @param lat Latitude to query the TwitterAPI for tweets
-     * @param lon Longitude to query the TwitterAPI for tweets
+     * @param lat  Latitude to query the TwitterAPI for tweets
+     * @param lon  Longitude to query the TwitterAPI for tweets
      */
     private void getTweets(String city, double lat, double lon) {
         // Get today's date, to filter tweets
@@ -154,9 +138,9 @@ public class EventsFragment extends Fragment {
 
         // Create twitter request for tweets data
         Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR \"live set\" " +
-                        "tonight -meeting -i filter:links -filter:retweets since:" +  sdf.format(cal.getTime()),
-                        new Geocode(lat, lon, 50, Geocode.Distance.KILOMETERS),null, null, null, 100,
-                       null, null, null,true);
+                        "tonight -meeting -i filter:links -filter:retweets since:" + sdf.format(cal.getTime()),
+                new Geocode(lat, lon, 50, Geocode.Distance.KILOMETERS), null, null, null, 100,
+                null, null, null, true);
 
         // Callback to read retrieved data
         call.enqueue(new Callback<Search>() {
@@ -191,14 +175,12 @@ public class EventsFragment extends Fragment {
 
     /**
      * Adapter for the recycler view to show the tweets appropriately
-     *
      */
     class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventsViewHolder> {
         private List<Tweet> tweets;
 
         /**
          * Class to hold the view for each item
-         *
          */
         final class EventsViewHolder extends RecyclerView.ViewHolder {
             private TextView hostName;
@@ -207,6 +189,7 @@ public class EventsFragment extends Fragment {
 
             /**
              * Constructor, find views inside view for data to be bound later
+             *
              * @param itemView View for the item
              */
             EventsViewHolder(@NonNull View itemView) {
@@ -247,7 +230,7 @@ public class EventsFragment extends Fragment {
             viewHolder.hostName.setText(tweet.user.name);
             viewHolder.description.setText(tweet.text);
 
-            if(!tweets.get(position).entities.media.isEmpty()) try {
+            if (!tweets.get(position).entities.media.isEmpty()) try {
                 viewHolder.image.setImageBitmap(new URL(tweet.entities.media.get(0).mediaUrlHttps));
 
             } catch (MalformedURLException e) {
@@ -274,13 +257,11 @@ public class EventsFragment extends Fragment {
 
     /**
      * Class to receive the information gathered from the current location, to get the tweets from
-     *
      */
     class AddressResultReceiver extends ResultReceiver {
 
         /**
          * Constructor
-         *
          */
         AddressResultReceiver() {
             super(new Handler());
@@ -291,8 +272,7 @@ public class EventsFragment extends Fragment {
             super.onReceiveResult(resultCode, resultData);
 
             // Check if successful data was sent back, warn user and terminate function
-            if (resultData == null || resultCode == FAILURE_RESULT)
-            {
+            if (resultData == null || resultCode == FAILURE_RESULT) {
                 Toast.makeText(getContext(), "Error retrieving data", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -306,8 +286,7 @@ public class EventsFragment extends Fragment {
             if (city != null && lat > -9999 && lon > -9999)
                 getTweets(city, lat, lon);
 
-            else
-            {
+            else {
                 Toast.makeText(getContext(), "No data retrieved", Toast.LENGTH_SHORT).show();
             }
         }
