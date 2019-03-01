@@ -1,33 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:facebook="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:facebook="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
     tools:context=".HomeFragment">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="HOME"
-        android:textAppearance="@style/Base.TextAppearance.AppCompat.Display4"
         android:layout_margin="20dp"
-        android:gravity="center"/>
+        android:gravity="center"
+        android:text="HOME"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Display4" />
 
-    <g3.coveventry.customViews.FacebookLoginButton
+    <g3.coveventry.customviews.FacebookLoginButton
         android:id="@+id/login_facebook"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:layout_gravity="center" />
+        android:layout_gravity="center"
+        android:layout_margin="20dp" />
 
-    <g3.coveventry.customViews.TwitterLoginButton
+    <g3.coveventry.customviews.TwitterLoginButton
         android:id="@+id/login_twitter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:layout_gravity="center"/>
+        android:layout_gravity="center"
+        android:layout_margin="20dp" />
 
 
 </LinearLayout>

@@ -1,4 +1,4 @@
-package g3.coveventry.events;
+package g3.coveventry;
 
 
 import android.Manifest;
@@ -46,7 +46,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
-import g3.coveventry.R;
 import g3.coveventry.customviews.CovImageView;
 import g3.coveventry.events.FetchAddressIntentService;
 import g3.coveventry.events.TwitterAPI;

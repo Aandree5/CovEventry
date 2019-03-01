@@ -3,6 +3,7 @@
     package="g3.coveventry">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 
     <application
         android:allowBackup="true"
@@ -43,6 +44,10 @@
                 <data android:scheme="@string/FB_LOGIN_PROTOCOL_SCHEME" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".events.FetchAddressIntentService"
+            android:exported="false"/>
     </application>
 
 </manifest>
