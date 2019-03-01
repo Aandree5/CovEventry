@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -24,6 +25,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,6 +55,11 @@ public class MainActivity extends AppCompatActivity {
 
     NavigationView navigationView;
 
+    ImageView imageView;
+    Button ImageBtn;
+    Button keyboardBtn;
+    private static final int PICK_IMAGE = 100;
+    Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +98,13 @@ public class MainActivity extends AppCompatActivity {
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, new EventsFragment())
                             .addToBackStack(null)
+                            .commit();
+                    break;
+
+                case R.id.nav_AddEvent:
+                    toolbar.setTitle("AddEvent");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new AddEventFragment())
                             .commit();
                     break;
 
@@ -202,7 +217,8 @@ public class MainActivity extends AppCompatActivity {
         // DEBUG
         // Development hash key (Facebook)
         try {
-            @SuppressLint("PackageManagerGetSignatures") final PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
+            @SuppressLint("PackageManagerGetSignatures")
+            final PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
             for (android.content.pm.Signature signature : info.signatures) {
                 final MessageDigest md = MessageDigest.getInstance("SHA");
                 md.update(signature.toByteArray());
