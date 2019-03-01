@@ -23,12 +23,10 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.login.widget.LoginButton;
 import com.twitter.sdk.android.core.DefaultLogger;
 import com.twitter.sdk.android.core.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterConfig;
-import com.twitter.sdk.android.core.identity.TwitterLoginButton;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,7 +35,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 
-import g3.coveventry.customViews.CovImageView;
+import g3.coveventry.customviews.CovImageView;
 
 import static g3.coveventry.User.FILE_USER_PHOTO;
 import static g3.coveventry.User.KEY_PHOTOURL;
@@ -106,7 +104,6 @@ public class MainActivity extends AppCompatActivity {
 
             return true;
         });
-
 
         // Initialize twitter API
         Twitter.initialize(new TwitterConfig.Builder(this)
