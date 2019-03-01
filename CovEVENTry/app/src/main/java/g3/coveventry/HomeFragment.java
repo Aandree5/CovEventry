@@ -1,9 +1,7 @@
 package g3.coveventry;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -21,27 +19,14 @@ import com.twitter.sdk.android.core.TwitterApiClient;
 import com.twitter.sdk.android.core.TwitterCore;
 import com.twitter.sdk.android.core.TwitterException;
 import com.twitter.sdk.android.core.TwitterSession;
-import com.twitter.sdk.android.core.identity.TwitterAuthClient;
 import com.twitter.sdk.android.core.services.AccountService;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
-
-import g3.coveventry.customViews.FacebookLoginButton;
-import g3.coveventry.customViews.TwitterLoginButton;
+import g3.coveventry.customviews.FacebookLoginButton;
+import g3.coveventry.customviews.TwitterLoginButton;
 import retrofit2.Call;
-
-import static g3.coveventry.User.KEY_EMAILS;
-import static g3.coveventry.User.KEY_FACEBOOKID;
-import static g3.coveventry.User.KEY_NAME;
-import static g3.coveventry.User.KEY_PHOTOURL;
-import static g3.coveventry.User.KEY_TWITTERID;
-import static g3.coveventry.User.KEY_TWITTERUSERNAME;
 
 
 public class HomeFragment extends Fragment {

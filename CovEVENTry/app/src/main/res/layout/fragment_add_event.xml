@@ -1,12 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?><!DOCTYPE android.support.constraint.ConstraintLayout>
+<?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/frameLayout2"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/com_facebook_button_background_color_focused"
-    tools:context=".AddEventFragment">
+    tools:context=".events.AddEventFragment">
 
     <TextView
         android:id="@+id/AddEventTitle"

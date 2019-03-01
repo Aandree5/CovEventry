@@ -31,22 +31,18 @@ public class AddEventFragment extends Fragment {
     private static final int PICK_IMAGE = 100;
     Uri imageUri;
 
-    public AddEventFragment()
-    {
+    public AddEventFragment() {
         // Required empty public constructor
     }
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_add_event, container, false);
-
-
+        return inflater.inflate(R.layout.fragment_events, container, false);
     }
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState)
-    {
+
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         //Declair items
         imageView = (ImageView) getView().findViewById(R.id.imageView);
         ImageBtn = (Button) getView().findViewById(R.id.ImageBtn);
@@ -58,19 +54,17 @@ public class AddEventFragment extends Fragment {
         EventDescription = (EditText) getView().findViewById(R.id.EventDescription);
 
         //Pull image from local gallery
-        ImageBtn.setOnClickListener(new View.OnClickListener(){
+        ImageBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 openGallery();
             }
         });
 
 
-        CancelBtn.setOnClickListener(new View.OnClickListener(){
+        CancelBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 EventName.setText("");
                 EventVenue.setText("");
                 EventPostCode.setText("");
@@ -81,19 +75,18 @@ public class AddEventFragment extends Fragment {
         });
 
     }
+
     // Open local gallery
-    private void openGallery()
-    {
+    private void openGallery() {
         Intent gallery = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.INTERNAL_CONTENT_URI);
         startActivityForResult(gallery, PICK_IMAGE);
     }
 
     // Set ImageView to the selected image
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        super.onActivityResult(requestCode,resultCode,data);
-        if(resultCode == Activity.RESULT_OK && requestCode == PICK_IMAGE){
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK && requestCode == PICK_IMAGE) {
             imageUri = data.getData();
             imageView.setImageURI(imageUri);
         }

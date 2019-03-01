@@ -1,4 +1,4 @@
-package g3.coveventry;
+package g3.coveventry.callbacks;
 
 /**
  * Class to be called by the User class every time data is updated

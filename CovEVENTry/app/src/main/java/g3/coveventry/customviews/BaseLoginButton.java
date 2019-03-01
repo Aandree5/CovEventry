@@ -1,4 +1,4 @@
-package g3.coveventry.customViews;
+package g3.coveventry.customviews;
 
 import android.app.Activity;
 import android.content.Context;
