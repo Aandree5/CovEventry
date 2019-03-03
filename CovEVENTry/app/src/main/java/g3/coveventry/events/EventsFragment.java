@@ -17,7 +17,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,10 +31,7 @@ import com.twitter.sdk.android.core.models.SafeListAdapter;
 import com.twitter.sdk.android.core.models.SafeMapAdapter;
 import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
-import com.twitter.sdk.android.core.models.TweetBuilder;
 import com.twitter.sdk.android.core.services.params.Geocode;
-import com.twitter.sdk.android.tweetui.CompactTweetView;
-import com.twitter.sdk.android.tweetui.SearchTimeline;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -47,9 +43,9 @@ import java.util.Locale;
 import java.util.Objects;
 
 import g3.coveventry.R;
+import g3.coveventry.database.CallbackDBResults;
 import g3.coveventry.customviews.CovImageView;
-import g3.coveventry.events.FetchAddressIntentService;
-import g3.coveventry.events.TwitterAPI;
+import g3.coveventry.database.Database;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -118,6 +114,19 @@ public class EventsFragment extends Fragment {
 
         }
 
+        Calendar cal = Calendar.getInstance();
+        cal.set(2019, 2, 2);
+        Database.getInstance().getEvents(cal.getTime(), new CallbackDBResults<Event>() {
+
+            @Override
+            public void connectionSuccessful(ArrayList<Event> results) {
+            }
+
+            @Override
+            public void connectionFailed(String message) {
+
+            }
+        });
 
         return view;
     }

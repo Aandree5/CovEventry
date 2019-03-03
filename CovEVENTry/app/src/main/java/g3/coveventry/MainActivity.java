@@ -39,7 +39,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 
-import g3.coveventry.callbacks.CallbackUser;
 import g3.coveventry.customviews.CovImageView;
 import g3.coveventry.database.Database;
 import g3.coveventry.events.AddEventFragment;
