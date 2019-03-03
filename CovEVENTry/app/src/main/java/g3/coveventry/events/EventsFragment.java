@@ -1,4 +1,4 @@
-package g3.coveventry;
+package g3.coveventry.events;
 
 
 import android.Manifest;
@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 
+import g3.coveventry.R;
 import g3.coveventry.customviews.CovImageView;
 import g3.coveventry.events.FetchAddressIntentService;
 import g3.coveventry.events.TwitterAPI;
@@ -157,6 +158,7 @@ public class EventsFragment extends Fragment {
 
 
                         Log.i("AppLog", String.format("%s tweets found, after filter %s", response.body().tweets.size(), ts.size()));
+                        Log.i("AppLog", "Filter location: " + city.toLowerCase());
 
                         // Set adapter to load tweets into recyclerv view
                         recyclerView.setAdapter(new EventsAdapter(ts));

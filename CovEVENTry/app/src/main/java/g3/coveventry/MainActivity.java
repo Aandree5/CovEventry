@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -25,8 +24,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -42,8 +39,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 
-import g3.coveventry.callbacks.CallbackUserDataUpdated;
+import g3.coveventry.callbacks.CallbackUser;
 import g3.coveventry.customviews.CovImageView;
+import g3.coveventry.database.Database;
+import g3.coveventry.events.AddEventFragment;
+import g3.coveventry.events.EventsFragment;
 
 import static g3.coveventry.User.FILE_USER_PHOTO;
 import static g3.coveventry.User.KEY_PHOTOURL;
@@ -54,12 +54,6 @@ public class MainActivity extends AppCompatActivity {
     public static final int PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 100;
 
     NavigationView navigationView;
-
-    ImageView imageView;
-    Button ImageBtn;
-    Button keyboardBtn;
-    private static final int PICK_IMAGE = 100;
-    Uri imageUri;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,56 +129,56 @@ public class MainActivity extends AppCompatActivity {
                 .build());
 
 
-        // Initialize user and register the callback for when data is updated
-        User.initialize(this, new CallbackUserDataUpdated() {
-            @Override
-            public void dataUpdated() {
-                // Find drawer header
-                View navHeader = navigationView.getHeaderView(0);
+        // Initialize User and register the callback for when data is updated
+        User.initialize(this, () -> {
+            // Find drawer header
+            View navHeader = navigationView.getHeaderView(0);
 
-                // Update user name
-                if (User.getCurrentUser().getName() != null)
-                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(User.getCurrentUser().getName());
+            // Update user name
+            if (User.getCurrentUser().getName() != null)
+                ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(User.getCurrentUser().getName());
 
-                else
-                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getResources().getString(R.string.nav_header_name_guest));
+            else
+                ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getResources().getString(R.string.nav_header_name_guest));
 
 
-                // Get photo from file, if was already downloaded, otherwise download it from the kept link
-                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-                if (new File(FILE_USER_PHOTO).exists()) {
-                    FileInputStream fInpStream = null;
-                    try {
-                        fInpStream = openFileInput(FILE_USER_PHOTO);
+            // Get photo from file, if was already downloaded, otherwise download it from the kept link
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            if (new File(FILE_USER_PHOTO).exists()) {
+                FileInputStream fInpStream = null;
+                try {
+                    fInpStream = openFileInput(FILE_USER_PHOTO);
 
-                        ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
-                                .setImageBitmap(BitmapFactory.decodeStream(fInpStream));
+                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
+                            .setImageBitmap(BitmapFactory.decodeStream(fInpStream));
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
 
-                    } finally {
-                        if (fInpStream != null) {
-                            try {
-                                fInpStream.close();
+                } finally {
+                    if (fInpStream != null) {
+                        try {
+                            fInpStream.close();
 
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
-                } else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
-                    try {
-                        ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
-                                .setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)), FILE_USER_PHOTO);
+                }
+            } else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
+                try {
+                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
+                            .setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)), FILE_USER_PHOTO);
 
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                } else
-                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
-            }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            } else
+                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
         });
+
+        // Initialize Database
+        Database.initialize(this);
 
         if (savedInstanceState == null) {
             // Load default fragment on start up
