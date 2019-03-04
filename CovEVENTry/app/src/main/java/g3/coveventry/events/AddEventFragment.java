@@ -60,33 +60,6 @@ public class AddEventFragment extends Fragment {
         EventDate = view.findViewById(R.id.EventDate);
         EventDescription = view.findViewById(R.id.EventDescription);
 
-
-        view.findViewById(R.id.SaveBtn).setOnClickListener(v -> {
-            Bitmap image = null;
-
-            if (imageUri != null) {
-                try {
-                    image = MediaStore.Images.Media.getBitmap(Objects.requireNonNull(getContext()).getContentResolver(), imageUri);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            Database.getInstance().addEvent(1, "Title", "Desc", image, "Venue", "PostCode", Calendar.getInstance().getTime(),
-                    new CallbackDBSimple() {
-                        @Override
-                        public void connectionSuccessful() {
-                        }
-
-                        @Override
-                        public void connectionFailed(String message) {
-                        }
-                    });
-        });
-
-
-
         //Pull image from local gallery
         ImageBtn.setOnClickListener(v -> openGallery());
 
