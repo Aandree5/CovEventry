@@ -133,46 +133,47 @@ public class Database {
         requestInfo.put("description", description);
         requestInfo.put("venue", venue);
         requestInfo.put("post_code", post_code);
-        requestInfo.put("dateTime", simpleDateFormat.format(dateTime));
+        requestInfo.put("date", simpleDateFormat.format(dateTime));
 
-        // If an image was set, prepare it to be sent to the database
-        if (image != null) {
 
-            // Compress image on a background task, to no prevent the UI thread from building the dialog
-            AsyncTask.execute(() -> {
+        // Compress image on a background task, to no prevent the UI thread from building the dialog
+        AsyncTask.execute(() -> {
+
+            // If an image was set, prepare it to be sent to the database
+            if (image != null) {
                 // Convert image to array of bytes
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                image.compress(Bitmap.CompressFormat.PNG, 100, byteArrayOutputStream);
+                image.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
                 byte[] imageBytes = byteArrayOutputStream.toByteArray();
 
                 // Encode array of byte into a string to be stored in the database
                 requestInfo.put("image", Base64.encodeToString(imageBytes, Base64.DEFAULT));
-            });
-        }
-
-        // Create connection to send the information to the database and handle callback calls
-        new connectMySQL(FILE_CREATE_EVENT, requestInfo, new connectMySQL.CallbackMySQLConnection() {
-            @Override
-            public void connectionSuccessful(JSONArray results) {
-                callback.connectionSuccessful();
             }
 
-            @Override
-            public void connectionStarted() {
-                callback.connectionStarted();
-            }
+            // Create connection to send the information to the database and handle callback calls
+            new connectMySQL(FILE_CREATE_EVENT, requestInfo, new connectMySQL.CallbackMySQLConnection() {
+                @Override
+                public void connectionSuccessful(JSONArray results) {
+                    callback.connectionSuccessful();
+                }
 
-            @Override
-            public void connectionFinished() {
-                callback.connectionFinished();
-            }
+                @Override
+                public void connectionStarted() {
+                    callback.connectionStarted();
+                }
 
-            @Override
-            public void connectionFailed(String message) {
-                callback.connectionFailed(message);
-            }
-        }).execute();
+                @Override
+                public void connectionFinished() {
+                    callback.connectionFinished();
+                }
 
+                @Override
+                public void connectionFailed(String message) {
+                    callback.connectionFailed(message);
+                }
+            }).execute();
+
+        });
     }
 
 
@@ -182,9 +183,11 @@ public class Database {
      * @param date     Date to request the database for events
      * @param callback Callback to return the retrieved events
      */
-    public void getEvents(Date date, CallbackDBResults<Event> callback) {
-        // Define the date and time format for MySQL to handle, webservices round to day, time is not counted
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    public void getEvents(Date date, @NonNull CallbackDBResults<Event> callback) {
+        startDialog("Retrieving event", "Searching for events around you");
+
+        // Define the date format for MySQL to handle, only date to search for the entire day
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
         // Prepare HashMap with values to send to the database
         HashMap<String, String> requestInfo = new HashMap<>();
@@ -206,6 +209,9 @@ public class Database {
             public void connectionSuccessful(JSONArray jsonArray) {
                 ArrayList<Event> events = new ArrayList<>();
 
+                // Change pattern to read date from MySQL database format
+                simpleDateFormat.applyPattern("yyyy-MM-dd HH:mm:ss");
+
                 // Format JSON into list of events
                 for (int i = 0; i < jsonArray.length(); i++) {
                     try {
@@ -220,9 +226,10 @@ public class Database {
                         }
 
                         // Create and add event into list
-                        events.add(new Event(jsonEvent.getLong("id"), jsonEvent.getLong("host_id"), jsonEvent.getString("title"),
-                                jsonEvent.getString("description"), image, jsonEvent.getString("venue"),
-                                jsonEvent.getString("post_code"), simpleDateFormat.parse(jsonEvent.getString("date")),
+                        events.add(new Event(jsonEvent.getLong("id"), jsonEvent.getLong("host_id"), jsonEvent.getString("host_name"),
+                                jsonEvent.getString("title"), jsonEvent.getString("description"), image,
+                                jsonEvent.getString("venue"), jsonEvent.getString("post_code"),
+                                simpleDateFormat.parse(jsonEvent.getString("date")),
                                 simpleDateFormat.parse(jsonEvent.getString("created"))));
 
                     } catch (ParseException | JSONException e) {
@@ -254,8 +261,8 @@ class connectMySQL extends AsyncTask<Void, Void, JSONArray> {
     private String fileURL;
     // HashMap of information to send to the database
     private HashMap<String, String> requestInfo;
-    // Store message if error occurred
-    private String errorMessage;
+    // Store message if error occurred, predefined as just error to prevent crashes
+    private String errorMessage = "Error";
 
     /**
      * Constructor to prepare the connection object

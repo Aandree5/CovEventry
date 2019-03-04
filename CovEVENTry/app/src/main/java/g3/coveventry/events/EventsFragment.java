@@ -4,7 +4,10 @@ package g3.coveventry.events;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ResultReceiver;
@@ -33,11 +36,14 @@ import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.params.Geocode;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -59,10 +65,11 @@ import static g3.coveventry.events.FetchAddressIntentService.RESULT_CITY_KEY;
 import static g3.coveventry.events.FetchAddressIntentService.RESULT_LAT_KEY;
 import static g3.coveventry.events.FetchAddressIntentService.RESULT_LON_KEY;
 
-
+//TODO: Save events on bundle for screen rotation and coming back from background
 public class EventsFragment extends Fragment {
     RecyclerView recyclerView;
     TwitterAPI twitterApi;
+    ArrayList<Event> events = new ArrayList<>();
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -74,6 +81,8 @@ public class EventsFragment extends Fragment {
         // Set recycler view properties
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setAdapter(new EventsAdapter());
+
 
         // Prepare retrofit to create an object of the TwitterAPI
         Retrofit retrofit = new Retrofit.Builder()
@@ -114,41 +123,46 @@ public class EventsFragment extends Fragment {
 
         }
 
-        Calendar cal = Calendar.getInstance();
-        cal.set(2019, 2, 2);
-        Database.getInstance().getEvents(cal.getTime(), new CallbackDBResults<Event>() {
-
-            @Override
-            public void connectionSuccessful(ArrayList<Event> results) {
-            }
-
-            @Override
-            public void connectionFailed(String message) {
-
-            }
-        });
 
         return view;
     }
 
 
     /**
-     * Get the tweets from Twitter, matching the given properties and only from the day
+     * Load event for the day, from database and twitter into recycler view
      *
      * @param city City to filter the tweets user location
      * @param lat  Latitude to query the TwitterAPI for tweets
      * @param lon  Longitude to query the TwitterAPI for tweets
      */
-    private void getTweets(String city, double lat, double lon) {
-        // Get today's date, to filter tweets
-        Calendar cal = Calendar.getInstance();
+    private void loadTweets(String city, double lat, double lon) {
+        // Reset events list
+        events.clear();
 
+        // Load events from database
+        Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<Event>() {
+            @Override
+            public void connectionSuccessful(ArrayList<Event> results) {
+                events.addAll(results);
+
+                // Notify recycler view of data changed
+                Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - 1 - results.size(), results.size());
+            }
+
+            @Override
+            public void connectionFailed(String message) {
+                Toast.makeText(getContext(), "Error retrieving from database", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+        // Load events from twitter
         // Set date formatting for twitter API
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
         // Create twitter request for tweets data
         Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR \"live set\" " +
-                        "tonight -meeting -i filter:links -filter:retweets since:" + sdf.format(cal.getTime()),
+                        "tonight -meeting -i filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
                 new Geocode(lat, lon, 50, Geocode.Distance.KILOMETERS), null, null, null, 100,
                 null, null, null, true);
 
@@ -161,16 +175,33 @@ public class EventsFragment extends Fragment {
                         List<Tweet> ts = new ArrayList<>();
 
                         // Filter out tweets that user location is not coventry
-                        for (Tweet tweet : response.body().tweets)
-                            if (tweet.user.location.toLowerCase().contains(city.toLowerCase()))
-                                ts.add(tweet);
+                        for (Tweet tweet : response.body().tweets) {
+                            if (tweet.user.location.toLowerCase().contains(city.toLowerCase())) {
 
+                                AsyncTask.execute(() -> {
+                                    try {
+                                        // Get image bitmap from URL
+                                        Bitmap image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
 
-                        Log.i("AppLog", String.format("%s tweets found, after filter %s", response.body().tweets.size(), ts.size()));
-                        Log.i("AppLog", "Filter location: " + city.toLowerCase());
+                                        // Set simpleDateFormat for twitter createdAt property format
+                                        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
 
-                        // Set adapter to load tweets into recyclerv view
-                        recyclerView.setAdapter(new EventsAdapter(ts));
+                                        // Save date into variable to only be computed once
+                                        Date createdDate = simpleDateFormat.parse(tweet.createdAt);
+
+                                        // Create event and add it to event list
+                                        events.add(new Event(tweet.id, tweet.user.id, tweet.user.name, tweet.user.screenName, tweet.text, image,
+                                                tweet.user.screenName, city, createdDate, createdDate, true));
+
+                                    } catch (ParseException | IOException e) {
+                                        e.printStackTrace();
+                                    }
+
+                                    // Notify recycler view of data changed
+                                    Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(events.size() - 1);
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -178,17 +209,17 @@ public class EventsFragment extends Fragment {
             @Override
             public void onFailure(@NonNull Call<Search> call, @NonNull Throwable t) {
                 // On failure log error
-                Toast.makeText(getContext(), "There was an error retrieving data.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Error retrieving from Twitter", Toast.LENGTH_SHORT).show();
                 t.printStackTrace();
             }
         });
     }
 
+
     /**
      * Adapter for the recycler view to show the tweets appropriately
      */
     class EventsAdapter extends RecyclerView.Adapter<EventsAdapter.EventsViewHolder> {
-        private List<Tweet> tweets;
 
         /**
          * Class to hold the view for each item
@@ -214,11 +245,8 @@ public class EventsFragment extends Fragment {
 
         /**
          * Constructor
-         *
-         * @param tweets List of tweets to show on recycler view
          */
-        EventsAdapter(List<Tweet> tweets) {
-            this.tweets = tweets;
+        EventsAdapter() {
             setHasStableIds(true);
         }
 
@@ -236,35 +264,31 @@ public class EventsFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull EventsViewHolder viewHolder, int position) {
             // Bind data to the current view holder
-            Tweet tweet = tweets.get(position);
+            Event event = events.get(position);
 
-            viewHolder.hostName.setText(tweet.user.name);
-            viewHolder.description.setText(tweet.text);
+            viewHolder.hostName.setText(event.hostName);
+            viewHolder.description.setText(event.description);
+            viewHolder.image.setImageBitmap(event.image);
 
-            if (!tweets.get(position).entities.media.isEmpty()) try {
-                viewHolder.image.setImageBitmap(new URL(tweet.entities.media.get(0).mediaUrlHttps));
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-
-            viewHolder.itemView.setOnClickListener(view -> {
+            //TODO: Allow to click on event to open more details
+            /*viewHolder.itemView.setOnClickListener(view -> {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(tweet.entities.media.get(0).expandedUrl));
                 startActivity(intent);
-            });
+            });*/
         }
 
 
         @Override
         public int getItemCount() {
-            return tweets.size();
+            return events.size();
         }
 
         @Override
         public long getItemId(int position) {
-            return tweets.get(position).id;
+            return events.get(position).id;
         }
     }
+
 
     /**
      * Class to receive the information gathered from the current location, to get the tweets from
@@ -295,10 +319,10 @@ public class EventsFragment extends Fragment {
 
             // Check information validity, and call function to get tweets
             if (city != null && lat > -9999 && lon > -9999)
-                getTweets(city, lat, lon);
+                loadTweets(city, lat, lon);
 
             else {
-                Toast.makeText(getContext(), "No data retrieved", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Error retrieving location", Toast.LENGTH_SHORT).show();
             }
         }
     }
