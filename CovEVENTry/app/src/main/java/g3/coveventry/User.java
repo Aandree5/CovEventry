@@ -15,7 +15,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import g3.coveventry.callbacks.CallbackUser;
+import g3.coveventry.utils.CallbackUser;
 
 /**
  * Singleton class to hold user information at runtime

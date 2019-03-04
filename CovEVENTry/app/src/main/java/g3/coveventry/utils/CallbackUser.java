@@ -1,4 +1,4 @@
-package g3.coveventry.callbacks;
+package g3.coveventry.utils;
 
 /**
  * Interface to be called by the User class every time data is updated

@@ -1,23 +1,30 @@
-package g3.coveventry;
+package g3.coveventry.events;
 
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.media.CamcorderProfile;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.TextView;
+
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.Objects;
+
+import g3.coveventry.R;
+import g3.coveventry.database.CallbackDBSimple;
+import g3.coveventry.database.Database;
 
 
 /**
@@ -37,41 +44,33 @@ public class AddEventFragment extends Fragment {
 
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_add_event, container, false);
     }
 
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        //Declair items
-        imageView = (ImageView) getView().findViewById(R.id.imageView);
-        ImageBtn = (Button) getView().findViewById(R.id.ImageBtn);
-        CancelBtn = (Button) getView().findViewById(R.id.CancelBtn);
-        EventName = (EditText) getView().findViewById(R.id.EventName);
-        EventVenue = (EditText) getView().findViewById(R.id.EventVenue);
-        EventPostCode = (EditText) getView().findViewById(R.id.EventPostCode);
-        EventDate = (EditText) getView().findViewById(R.id.EventDate);
-        EventDescription = (EditText) getView().findViewById(R.id.EventDescription);
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        //Declare items
+        imageView = view.findViewById(R.id.imageView);
+        ImageBtn = view.findViewById(R.id.ImageBtn);
+        CancelBtn = view.findViewById(R.id.CancelBtn);
+        EventName = view.findViewById(R.id.EventName);
+        EventVenue = view.findViewById(R.id.EventVenue);
+        EventPostCode = view.findViewById(R.id.EventPostCode);
+        EventDate = view.findViewById(R.id.EventDate);
+        EventDescription = view.findViewById(R.id.EventDescription);
 
         //Pull image from local gallery
-        ImageBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openGallery();
-            }
-        });
+        ImageBtn.setOnClickListener(v -> openGallery());
 
 
-        CancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                EventName.setText("");
-                EventVenue.setText("");
-                EventPostCode.setText("");
-                EventDate.setText("");
-                EventDescription.setText("");
-                imageView.setImageResource(0);
-            }
+        CancelBtn.setOnClickListener(v -> {
+            EventName.setText("");
+            EventVenue.setText("");
+            EventPostCode.setText("");
+            EventDate.setText("");
+            EventDescription.setText("");
+            imageView.setImageResource(0);
         });
 
     }

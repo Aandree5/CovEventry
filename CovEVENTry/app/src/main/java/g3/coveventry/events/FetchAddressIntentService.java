@@ -84,10 +84,6 @@ public class FetchAddressIntentService extends IntentService {
             // Get the first address in the list (only one was retrieved)
             Address address = addresses.get(0);
 
-            Log.i("AppLog", "Address found");
-            Log.i("AppLog", addresses.toString());
-            Log.i("AppLog", address.getLocality());
-
             deliverResultToReceiver(SUCCESS_RESULT, address.getLocality(), location.getLatitude(), location.getLongitude());
         }
     }
