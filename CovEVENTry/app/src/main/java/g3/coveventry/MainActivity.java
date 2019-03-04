@@ -23,12 +23,11 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.login.widget.LoginButton;
+import com.google.android.gms.maps.SupportMapFragment;
 import com.twitter.sdk.android.core.DefaultLogger;
 import com.twitter.sdk.android.core.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterConfig;
-import com.twitter.sdk.android.core.identity.TwitterLoginButton;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -83,13 +82,17 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.nav_events:
                     toolbar.setTitle("Events");
                     getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, new EventsFragment())
-                            .addToBackStack(null)
-                            .commit();
-                    break;
+                        .replace(R.id.fragment_container, new EventsFragment())
+                        .addToBackStack(null)
+                        .commit();
+                break;
 
                 case R.id.nav_map:
-                    Toast.makeText(getApplicationContext(), "Load map fragment", Toast.LENGTH_SHORT).show();
+                    toolbar.setTitle("Maps");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new MapFragment())
+                            .addToBackStack(null)
+                            .commit();
                     break;
 
                 case R.id.nav_database:
