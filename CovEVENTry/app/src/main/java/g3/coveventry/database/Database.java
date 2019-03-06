@@ -99,7 +99,7 @@ public class Database {
     /**
      * Close progress dialog
      */
-    public void stopDialog() {
+    void stopDialog() {
         if (progressDialog != null && progressDialog.isShowing())
             progressDialog.dismiss();
     }
@@ -346,7 +346,7 @@ class connectMySQL extends AsyncTask<Void, Void, JSONArray> {
         Database.getInstance().stopDialog();
 
         // If items were returned it was a success, otherwise send error message
-        if (results.length() > 0)
+        if (results.length() > 0 || errorMessage.equalsIgnoreCase("null"))
             callback.connectionSuccessful(results);
 
         else
