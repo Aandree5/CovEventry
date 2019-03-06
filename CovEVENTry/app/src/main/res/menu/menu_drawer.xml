@@ -14,19 +14,19 @@
             android:title="Events" />
         <item
             android:id="@+id/nav_map"
-            android:icon="@drawable/ic_map"
+            android:icon="@drawable/ic_map_color"
             android:title="Map View" />
         <item
             android:id="@+id/nav_account"
-            android:icon="@drawable/ic_account"
+            android:icon="@drawable/ic_account_color"
             android:title="Account" />
         <item
             android:id="@+id/nav_friends"
-            android:icon="@drawable/ic_friends"
+            android:icon="@drawable/ic_friends_color"
             android:title="Friends" />
         <item
             android:id="@+id/nav_about"
-            android:icon="@drawable/ic_about"
+            android:icon="@drawable/ic_about_color"
             android:title="About" />
     </group>
 
@@ -34,11 +34,11 @@
         <menu>
             <item
                 android:id="@+id/nav_settings"
-                android:icon="@drawable/ic_settings"
+                android:icon="@drawable/ic_settings_color"
                 android:title="Settings" />
             <item
                 android:id="@+id/nav_help"
-                android:icon="@drawable/ic_help"
+                android:icon="@drawable/ic_help_color"
                 android:title="Help"
                 />
         </menu>
