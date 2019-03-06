@@ -1,5 +1,6 @@
 package g3.coveventry;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,7 +9,10 @@ import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -23,12 +27,10 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.facebook.login.widget.LoginButton;
 import com.twitter.sdk.android.core.DefaultLogger;
 import com.twitter.sdk.android.core.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterConfig;
-import com.twitter.sdk.android.core.identity.TwitterLoginButton;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,15 +39,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 
-import g3.coveventry.customViews.CovImageView;
+import g3.coveventry.customviews.CovImageView;
+import g3.coveventry.database.Database;
+import g3.coveventry.events.AddEventFragment;
+import g3.coveventry.events.EventsFragment;
 
 import static g3.coveventry.User.FILE_USER_PHOTO;
 import static g3.coveventry.User.KEY_PHOTOURL;
 
 
 public class MainActivity extends AppCompatActivity {
-    NavigationView navigationView;
+    //Constants
+    public static final int PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 100;
 
+    NavigationView navigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,8 +78,7 @@ public class MainActivity extends AppCompatActivity {
             if (navigationView.getCheckedItem() == menuItem)
                 return false;
 
-            switch (menuItem.getItemId())
-            {
+            switch (menuItem.getItemId()) {
                 case R.id.nav_home:
                     toolbar.setTitle(R.string.app_name);
                     getSupportFragmentManager().beginTransaction()
@@ -85,6 +91,13 @@ public class MainActivity extends AppCompatActivity {
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, new EventsFragment())
                             .addToBackStack(null)
+                            .commit();
+                    break;
+
+                case R.id.nav_AddEvent:
+                    toolbar.setTitle("AddEvent");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new AddEventFragment())
                             .commit();
                     break;
 
@@ -104,7 +117,6 @@ public class MainActivity extends AppCompatActivity {
             return true;
         });
 
-
         // Initialize twitter API
         Twitter.initialize(new TwitterConfig.Builder(this)
                 .logger(new DefaultLogger(Log.DEBUG)) // Enable logging when app is in debug mode
@@ -113,65 +125,83 @@ public class MainActivity extends AppCompatActivity {
                 .build());
 
 
-        // Initialize user and register the callback for when data is updated
-        User.initialize(this, new CallbackUserDataUpdated() {
-            @Override
-            public void dataUpdated() {
-                // Find drawer header
-                View navHeader = navigationView.getHeaderView(0);
+        // Initialize User and register the callback for when data is updated
+        User.initialize(this, () -> {
+            // Find drawer header
+            View navHeader = navigationView.getHeaderView(0);
 
-                // Update user name
-                if (User.getCurrentUser().getName() != null)
-                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(User.getCurrentUser().getName());
+            // Update user name
+            if (User.getCurrentUser().getName() != null)
+                ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(User.getCurrentUser().getName());
 
-                else
-                    ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getResources().getString(R.string.nav_header_name_guest));
+            else
+                ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getResources().getString(R.string.nav_header_name_guest));
 
 
-                // Get photo from file, if was already downloaded, otherwise download it from the kept link
-                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-                if (new File(FILE_USER_PHOTO).exists()) {
-                    FileInputStream fInpStream = null;
-                    try {
-                        fInpStream = openFileInput(FILE_USER_PHOTO);
+            // Get photo from file, if was already downloaded, otherwise download it from the kept link
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+            if (new File(FILE_USER_PHOTO).exists()) {
+                FileInputStream fInpStream = null;
+                try {
+                    fInpStream = openFileInput(FILE_USER_PHOTO);
 
-                        ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
-                                .setImageBitmap(BitmapFactory.decodeStream(fInpStream));
+                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
+                            .setImageBitmap(BitmapFactory.decodeStream(fInpStream));
 
-                    } catch (Exception e) {
-                        e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
 
-                    } finally {
-                        if (fInpStream != null) {
-                            try {
-                                fInpStream.close();
+                } finally {
+                    if (fInpStream != null) {
+                        try {
+                            fInpStream.close();
 
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
                     }
-                } else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
-                    try {
-                        ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
-                                .setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)), FILE_USER_PHOTO);
+                }
+            } else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
+                try {
+                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
+                            .setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)), FILE_USER_PHOTO);
 
-                    } catch (MalformedURLException e) {
-                        e.printStackTrace();
-                    }
-                } else
-                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
-            }
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            } else
+                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
         });
 
-        if(savedInstanceState == null)
-        {
+        // Initialize Database
+        Database.initialize(this);
+
+        if (savedInstanceState == null) {
             // Load default fragment on start up
-           getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new HomeFragment())
-                .commit();
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, new HomeFragment())
+                    .commit();
 
             navigationView.setCheckedItem(R.id.nav_home);
+        }
+
+        // Request needed permission if user didn't given them yet
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            navigationView.getMenu().findItem(R.id.nav_events).setEnabled(false);
+
+            // If user already said no once, show a message to explain better why we need them, otherwise just ask for permission
+            if (shouldShowRequestPermissionRationale(Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                new AlertDialog.Builder(this)
+                        .setTitle("Access device location")
+                        .setMessage("The location will only be used to show events that are happening near you.")
+                        .setPositiveButton("Allow", (dialog, which) -> ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_ACCESS_FINE_LOCATION))
+                        .setNegativeButton("Cancel", null)
+                        .show();
+
+            } else
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_ACCESS_FINE_LOCATION);
+
         }
 
         // DEBUG
@@ -229,6 +259,23 @@ public class MainActivity extends AppCompatActivity {
         Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         if (fragment != null) {
             fragment.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        // Check for requested permissions
+        switch (requestCode) {
+            case PERMISSION_REQUEST_ACCESS_FINE_LOCATION:
+                // If request is cancelled, the result arrays are empty.
+
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                    navigationView.getMenu().findItem(R.id.nav_events).setEnabled(true);
+
+                else
+                    navigationView.getMenu().findItem(R.id.nav_events).setEnabled(true);
         }
     }
 }

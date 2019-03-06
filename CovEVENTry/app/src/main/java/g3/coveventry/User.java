@@ -1,6 +1,6 @@
 package g3.coveventry;
 
-import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import g3.coveventry.utils.CallbackUser;
+
 /**
  * Singleton class to hold user information at runtime
  */
@@ -22,12 +24,12 @@ public class User {
     // File to save the user photo to
     static final String FILE_USER_PHOTO = "userPhoto.png";
 
-    // One and only user instance
+    // One and only User instance
     private static User user = new User();
-    // Weak reference to activity, doesn't prevent garbage collection
-    private WeakReference<Activity> activityRef = null;
+    // Weak reference to application context, doesn't prevent garbage collection
+    private WeakReference<Context> contextRef = null;
     // Callback to execute when data is updated
-    private CallbackUserDataUpdated callback = null;
+    private CallbackUser callback = null;
 
     // Constant values for shared preferences data keys
     static final String KEY_NAME = "name";
@@ -56,11 +58,11 @@ public class User {
      * Save user data to shared preferences and execute callback function if set
      */
     private void persistData() {
-        // Check if activity still exists
-        Activity activity = activityRef.get();
-        if (activity != null) {
+        // Check if context still exists
+        Context context = contextRef.get();
+        if (context != null) {
             // Update shared preferences
-            SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity).edit();
+            SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
             sharedPreferences.putString(KEY_NAME, name);
             sharedPreferences.putStringSet(KEY_EMAILS, emails);
@@ -72,9 +74,9 @@ public class User {
 
             // If set, run callback function
             if (callback != null)
-                callback.dataUpdated();
+                callback.userDataUpdated();
         } else
-            throw new RuntimeException("Activity reference not set, make sure to initialize user first.");
+            throw new RuntimeException("Context reference not set, make sure to initialize user first.");
     }
 
     /**
@@ -93,18 +95,18 @@ public class User {
 
 
     /**
-     * Initialize user object, setting activity refernce and callback function, updates user
+     * Initialize user object, setting context reference and callback function, updates user
      * data from shared preferences and executes callback function
      *
-     * @param activity Activity to hold a weak reference to
+     * @param context Application context to hold a weak reference to
      * @param callback Function to execute when data is updated
      */
-    static void initialize(@NonNull Activity activity, @Nullable CallbackUserDataUpdated callback) {
-        user.activityRef = new WeakReference<>(activity);
+    static void initialize(@NonNull Context context, @Nullable CallbackUser callback) {
+        user.contextRef = new WeakReference<>(context);
         user.callback = callback;
 
         // Update user data, from shared preferences
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 
         user.name = sharedPreferences.getString(KEY_NAME, null);
         user.emails = sharedPreferences.getStringSet(KEY_EMAILS, null);
@@ -117,18 +119,18 @@ public class User {
 
         // If set, run callback function
         if (callback != null)
-            callback.dataUpdated();
+            callback.userDataUpdated();
     }
 
 
     /**
-     * Checks if activity is still valid and return the user object
+     * Checks if context is still valid and return the user object
      *
      * @return The user object
      */
     public static User getCurrentUser() {
-        if (user.activityRef.get() == null)
-            throw new RuntimeException("Activity reference not set, make sure to initialize user first.");
+        if (user.contextRef.get() == null)
+            throw new RuntimeException("Context reference not set, make sure to initialize user first.");
 
         // Check SDKs status
         user.checkSocialMediaAPIStatus();
@@ -236,9 +238,9 @@ public class User {
 
         // If photo is given save it to shared preferences, as is not kept on the object
         if (photoUrl != null) {
-            Activity activity = activityRef.get();
-            if (activity != null)
-                PreferenceManager.getDefaultSharedPreferences(activity)
+            Context context = contextRef.get();
+            if (context != null)
+                PreferenceManager.getDefaultSharedPreferences(context)
                         .edit()
                         .putString(KEY_PHOTOURL, photoUrl)
                         .apply();
@@ -274,9 +276,9 @@ public class User {
 
         // If photo is given save it to shared preferences, as is not kept on the object
         if (photoUrl != null) {
-            Activity activity = activityRef.get();
-            if (activity != null)
-                PreferenceManager.getDefaultSharedPreferences(activity)
+            Context context = contextRef.get();
+            if (context != null)
+                PreferenceManager.getDefaultSharedPreferences(context)
                         .edit()
                         .putString(KEY_PHOTOURL, photoUrl)
                         .apply();
@@ -303,9 +305,9 @@ public class User {
             new File(FILE_USER_PHOTO).delete();
 
             // Remove data from shared preferences
-            Activity activity = activityRef.get();
-            if (activity != null) {
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity).edit();
+            Context context = contextRef.get();
+            if (context != null) {
+                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
                 sharedPreferences.remove(KEY_NAME);
                 sharedPreferences.remove(KEY_EMAILS);
@@ -317,14 +319,14 @@ public class User {
 
             // Execute callback if set
             if (callback != null)
-                callback.dataUpdated();
+                callback.userDataUpdated();
         } else {
             facebookID = null;
 
             // Remove id from shared preferences
-            Activity activity = activityRef.get();
-            if (activity != null)
-                PreferenceManager.getDefaultSharedPreferences(activity)
+            Context context = contextRef.get();
+            if (context != null)
+                PreferenceManager.getDefaultSharedPreferences(context)
                         .edit()
                         .remove(KEY_FACEBOOKID)
                         .apply();
@@ -349,9 +351,9 @@ public class User {
             new File(FILE_USER_PHOTO).delete();
 
             // Remove data from shared preferences
-            Activity activity = activityRef.get();
-            if (activity != null) {
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity).edit();
+            Context context = contextRef.get();
+            if (context != null) {
+                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
                 sharedPreferences.remove(KEY_NAME);
                 sharedPreferences.remove(KEY_EMAILS);
@@ -364,15 +366,15 @@ public class User {
 
             // Execute callback if set
             if (callback != null)
-                callback.dataUpdated();
+                callback.userDataUpdated();
         } else {
             twitterID = null;
             twitterUsername = null;
 
             // Remove id and username from shared preferences
-            Activity activity = activityRef.get();
-            if (activity != null) {
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity).edit();
+            Context context = contextRef.get();
+            if (context != null) {
+                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
                 sharedPreferences.remove(KEY_TWITTERID);
                 sharedPreferences.remove(KEY_TWITTERUSERNAME);

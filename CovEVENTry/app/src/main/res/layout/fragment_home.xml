@@ -16,22 +16,19 @@
         android:src="@drawable/logo"
         android:padding="10dp"/>
 
-    <g3.coveventry.customViews.FacebookLoginButton
+    <g3.coveventry.customviews.FacebookLoginButton
         android:id="@+id/login_facebook"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="20dp" />
 
-    <g3.coveventry.customViews.TwitterLoginButton
+    <g3.coveventry.customviews.TwitterLoginButton
         android:id="@+id/login_twitter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="20dp" />
-
-
-
 
 
 </LinearLayout>
