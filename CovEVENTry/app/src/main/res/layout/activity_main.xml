@@ -15,8 +15,8 @@
         android:orientation="vertical">
 
         <android.support.design.widget.AppBarLayout
-            android:layout_height="wrap_content"
             android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:theme="@style/AppTheme.AppBarOverlay">
 
             <android.support.v7.widget.Toolbar
@@ -24,24 +24,50 @@
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
+                android:elevation="4dp"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 
         </android.support.design.widget.AppBarLayout>
 
+
         <FrameLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <android.support.design.widget.BottomNavigationView
+            android:id="@+id/bottom_nav_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="?attr/colorPrimary"
+            app:elevation="16dp"
+            app:itemIconTint="@color/color_navigation_item"
+            app:itemTextColor="@color/color_navigation_item"
+            app:labelVisibilityMode="auto"
+            app:menu="@menu/menu_bottom_nav" />
 
     </LinearLayout>
+
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nav_view"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
+        android:background="#cccc"
         android:fitsSystemWindows="true"
+        app:elevation="16dp"
         app:headerLayout="@layout/nav_header_main"
-        app:menu="@menu/menu_drawer" />
+        app:itemIconTint="@color/color_navigation_item"
+        app:itemTextColor="@color/color_navigation_item"
+        app:menu="@menu/menu_nav_drawer" />
+
+
+
+
 
 </android.support.v4.widget.DrawerLayout>
+
+
