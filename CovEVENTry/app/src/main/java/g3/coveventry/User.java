@@ -38,6 +38,7 @@ public class User {
     static final String KEY_FACEBOOKID = "facebookID";
     static final String KEY_TWITTERID = "twitterID";
     static final String KEY_TWITTERUSERNAME = "twiterUsername";
+    static final String KEY_VERIFIED = "verified";
 
     // User data
     private String name = null;
@@ -45,6 +46,7 @@ public class User {
     private String facebookID = null;
     private String twitterID = null;
     private String twitterUsername = null;
+    private boolean verified = false;
 
 
     /**
@@ -60,6 +62,7 @@ public class User {
     private void persistData() {
         // Check if context still exists
         Context context = contextRef.get();
+
         if (context != null) {
             // Update shared preferences
             SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
@@ -69,8 +72,10 @@ public class User {
             sharedPreferences.putString(KEY_FACEBOOKID, facebookID);
             sharedPreferences.putString(KEY_TWITTERID, twitterID);
             sharedPreferences.putString(KEY_TWITTERUSERNAME, twitterUsername);
+            sharedPreferences.putBoolean(KEY_VERIFIED, verified);
 
             sharedPreferences.apply();
+
 
             // If set, run callback function
             if (callback != null)
@@ -113,6 +118,7 @@ public class User {
         user.facebookID = sharedPreferences.getString(KEY_FACEBOOKID, null);
         user.twitterID = sharedPreferences.getString(KEY_TWITTERID, null);
         user.twitterUsername = sharedPreferences.getString(KEY_TWITTERUSERNAME, null);
+        user.verified = sharedPreferences.getBoolean(KEY_VERIFIED, false);
 
         // Check SDKs status
         user.checkSocialMediaAPIStatus();
@@ -197,6 +203,16 @@ public class User {
 
 
     /**
+     * Check if current user has been verified on Twitter
+     *
+     * @return True if user has been verified, false otherwise
+     */
+    public boolean isVerified() {
+        return verified;
+    }
+
+
+    /**
      * Check if has user's Facebook data
      *
      * @return True if has user's Facebook data, false otherwise
@@ -260,12 +276,14 @@ public class User {
      * @param username Twitter username of the user
      * @param photoUrl Twitter profile picture of the user
      * @param email    Twitter email of the user
+     * @param verified If twitter account is verified
      */
     void saveTwitter(@NonNull String id, @NonNull String name, @NonNull String username,
-                     @Nullable String photoUrl, @NonNull String email) {
+                     @Nullable String photoUrl, @NonNull String email, boolean verified) {
         this.twitterID = id;
         this.name = name;
         this.twitterUsername = username;
+        this.verified = verified;
 
         // If there where already emails add a new, otherwise create a new set
         if (this.emails != null)
@@ -383,4 +401,5 @@ public class User {
             }
         }
     }
+
 }

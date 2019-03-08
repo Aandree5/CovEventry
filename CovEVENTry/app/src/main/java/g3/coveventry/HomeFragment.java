@@ -4,14 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.facebook.AccessToken;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
+import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
+import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
+import com.facebook.internal.FacebookInitProvider;
 import com.facebook.login.LoginResult;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
@@ -49,10 +54,7 @@ public class HomeFragment extends Fragment {
             public void onSuccess(final LoginResult loginResult) {
 
                 // If login is successful, create the request for the needed user data
-                Bundle params = new Bundle();
-                params.putString("fields", "name,email,picture.type(normal)");
-
-                new GraphRequest(loginResult.getAccessToken(), "me", params, HttpMethod.GET, response -> {
+                GraphRequest request = GraphRequest.newMeRequest(loginResult.getAccessToken(), (object, response) -> {
                     if (response != null) {
                         try {
                             JSONObject data = response.getJSONObject();
@@ -62,7 +64,7 @@ public class HomeFragment extends Fragment {
                             if (data.has("picture"))
                                 photoUrl = data.getJSONObject("picture").getJSONObject("data").getString("url");
 
-                            User.getCurrentUser().saveFacebook(loginResult.getAccessToken().getUserId(),
+                            User.getCurrentUser().saveFacebook(data.getString("id"),
                                     data.getString("name"), photoUrl, data.getString("email"));
 
 
@@ -70,7 +72,12 @@ public class HomeFragment extends Fragment {
                             e.printStackTrace();
                         }
                     }
-                }).executeAsync();
+                });
+
+                Bundle parameters = new Bundle();
+                parameters.putString("fields", "id,name,email,picture");
+                request.setParameters(parameters);
+                request.executeAsync();
             }
 
             @Override
@@ -93,7 +100,7 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void success(Result<com.twitter.sdk.android.core.models.User> userResult) {
                         User.getCurrentUser().saveTwitter(String.valueOf(result.data.getUserId()), userResult.data.name,
-                                userResult.data.screenName, userResult.data.profileImageUrl, userResult.data.email);
+                                userResult.data.screenName, userResult.data.profileImageUrl, userResult.data.email, userResult.data.verified);
                     }
 
                     @Override
