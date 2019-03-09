@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
@@ -37,7 +36,6 @@ import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.params.Geocode;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -135,7 +133,7 @@ public class EventsFragment extends Fragment {
      * @param lat  Latitude to query the TwitterAPI for tweets
      * @param lon  Longitude to query the TwitterAPI for tweets
      */
-    private void loadTweets(String city, double lat, double lon) {
+    private void loadEvents(String city, double lat, double lon) {
         // Reset events list
         events.clear();
 
@@ -143,14 +141,17 @@ public class EventsFragment extends Fragment {
         Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<Event>() {
             @Override
             public void connectionSuccessful(ArrayList<Event> results) {
-                events.addAll(results);
+                if (!results.isEmpty()) {
+                    events.addAll(results);
 
-                // Notify recycler view of data changed
-                Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - 1 - results.size(), results.size());
+                    // Notify recycler view of data changed
+                    Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - 1 - results.size(), results.size());
+                }
             }
 
             @Override
             public void connectionFailed(String message) {
+                Log.e("AppLog", message);
                 Toast.makeText(getContext(), "Error retrieving from database", Toast.LENGTH_SHORT).show();
             }
         });
@@ -181,7 +182,9 @@ public class EventsFragment extends Fragment {
                                 AsyncTask.execute(() -> {
                                     try {
                                         // Get image bitmap from URL
-                                        Bitmap image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
+                                        Bitmap image = null;
+                                        if (!tweet.entities.media.isEmpty())
+                                            image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
 
                                         // Set simpleDateFormat for twitter createdAt property format
                                         simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
@@ -268,7 +271,12 @@ public class EventsFragment extends Fragment {
 
             viewHolder.hostName.setText(event.hostName);
             viewHolder.description.setText(event.description);
-            viewHolder.image.setImageBitmap(event.image);
+
+            if (event.image != null)
+                viewHolder.image.setImageBitmap(event.image);
+
+            else
+                viewHolder.image.setImageDrawable(R.drawable.ic_event_placeholder, Objects.requireNonNull(getActivity()).getTheme());
 
             //TODO: Allow to click on event to open more details
             /*viewHolder.itemView.setOnClickListener(view -> {
@@ -319,7 +327,7 @@ public class EventsFragment extends Fragment {
 
             // Check information validity, and call function to get tweets
             if (city != null && lat > -9999 && lon > -9999)
-                loadTweets(city, lat, lon);
+                loadEvents(city, lat, lon);
 
             else {
                 Toast.makeText(getContext(), "Error retrieving location", Toast.LENGTH_SHORT).show();
