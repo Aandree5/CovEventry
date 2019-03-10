@@ -17,7 +17,7 @@ import com.twitter.sdk.android.core.TwitterSession;
 import com.twitter.sdk.android.core.identity.TwitterAuthClient;
 
 import g3.coveventry.R;
-import g3.coveventry.User;
+import g3.coveventry.user.User;
 
 /**
  * Class to handle Twitter's log in and log out
@@ -86,7 +86,7 @@ public class TwitterLoginButton extends BaseLoginButton {
                 // Show dialog to confirm logout
                 new AlertDialog.Builder(context)
                         .setTitle("Twitter")
-                        .setMessage(String.format(res.getString(R.string.logged_in_as), User.getCurrentUser().getTwitterUsername()))
+                        .setMessage(String.format(res.getString(R.string.logged_in_as), User.getCurrentUser().getUsername()))
                         .setCancelable(true)
                         .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
                             TwitterCore.getInstance().getSessionManager().clearActiveSession();
