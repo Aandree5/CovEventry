@@ -103,7 +103,8 @@
             android:id="@+id/EventDate"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Date (DDMMYY)" />
+            android:hint="Date (DDMMYY)"
+            android:inputType="date" />
     </android.support.design.widget.TextInputLayout>
 
     <android.support.design.widget.TextInputLayout
@@ -158,4 +159,5 @@
             android:layout_height="wrap_content"
             android:hint="Event Name ..." />
     </android.support.design.widget.TextInputLayout>
+
 </android.support.constraint.ConstraintLayout>
