@@ -1,9 +1,10 @@
-package g3.coveventry.customViews;
+package g3.coveventry.customviews;
 
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -24,6 +25,7 @@ import g3.coveventry.R;
 public class CovImageView extends FrameLayout {
     CardView cardView;
     ImageView imgView;
+    Drawable placeholder;
 
     public CovImageView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
@@ -33,6 +35,7 @@ public class CovImageView extends FrameLayout {
 
         try
         {
+            // Get the defined round attribute
             if (a.getBoolean(R.styleable.CovImageView_round, false))
             {
                 cardView = new CardView(getContext());
@@ -42,6 +45,9 @@ public class CovImageView extends FrameLayout {
                 addView(cardView);
                 parent = cardView;
             }
+
+            // Get the defined placeholder attribute
+            placeholder = a.getDrawable(R.styleable.CovImageView_placeholder);
         }
         finally
         {
@@ -106,7 +112,7 @@ public class CovImageView extends FrameLayout {
      */
     public void resetImage()
     {
-        imgView.setImageResource(R.drawable.ic_user_placeholder);
+        imgView.setImageDrawable(placeholder);
     }
 
     /**
@@ -139,36 +145,19 @@ public class CovImageView extends FrameLayout {
 
         @Override
         protected Bitmap doInBackground(URL... urls) {
-            Bitmap photo = null;
+            Bitmap image = null;
 
             try {
-                // Download photo from url
-                photo = BitmapFactory.decodeStream(urls[0].openConnection().getInputStream());
+                // Download image from url
+                image = BitmapFactory.decodeStream(urls[0].openConnection().getInputStream());
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return photo;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-
-            CovImageView ciView = covImgView.get();
-            if (bitmap != null && ciView != null) {
-                // Set user photo
-                ciView.setImageBitmap(bitmap);
-
-                if (filePath != null)
-                {
-                    // Save photo to file
+                if (filePath != null) {
+                    // Save image to file
                     FileOutputStream fOutStream = null;
                     try {
-                        fOutStream = ciView.getContext().openFileOutput(filePath, Context.MODE_PRIVATE);
+                        fOutStream = covImgView.get().getContext().openFileOutput(filePath, Context.MODE_PRIVATE);
 
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, fOutStream);
+                        image.compress(Bitmap.CompressFormat.PNG, 100, fOutStream);
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -184,6 +173,22 @@ public class CovImageView extends FrameLayout {
                         }
                     }
                 }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return image;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+
+            CovImageView ciView = covImgView.get();
+            if (bitmap != null && ciView != null) {
+                // Set user photo
+                ciView.setImageBitmap(bitmap);
             }
         }
     }

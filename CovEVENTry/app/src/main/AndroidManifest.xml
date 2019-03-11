@@ -9,6 +9,7 @@
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -29,13 +30,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="@string/google_maps_key" />
-        <meta-data
-            android:name="com.google.android.gms.version"
-            android:value="@integer/google_play_services_version" />
 
-        <activity
-            android:name=".MapFragment"
-            android:label="@string/title_activity_map_fragment"></activity>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
@@ -67,6 +62,10 @@
                 <data android:scheme="@string/FB_LOGIN_PROTOCOL_SCHEME" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".events.FetchAddressIntentService"
+            android:exported="false" />
     </application>
 
 </manifest>

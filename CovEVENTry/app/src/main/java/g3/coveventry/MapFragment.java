@@ -32,6 +32,8 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.twitter.sdk.android.core.DefaultLogger;
@@ -45,13 +47,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
-
-import g3.coveventry.customViews.CovImageView;
-
+/*import g3.coveventry.customViews.CovImageView;
+ */
 import static g3.coveventry.User.FILE_USER_PHOTO;
 import static g3.coveventry.User.KEY_PHOTOURL;
 
-public class MapFragment extends Fragment implements OnMapReadyCallback
+public class MapFragment extends Fragment
 {
 
 
@@ -59,18 +60,50 @@ public class MapFragment extends Fragment implements OnMapReadyCallback
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.activity_map_fragment, container, false);
 
-        SupportMapFragment mapView = (SupportMapFragment) getActivity().getSupportFragmentManager().findFragmentById(R.id.map);
+        SupportMapFragment mapView = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
 
-        mapView.getMapAsync(this);
-        Log.i("AppLog", "YAa");
+        if (mapView != null)
+            mapView.getMapAsync(googleMap -> {
+
+                LatLng position = new LatLng(52.40656, -1.51217);
+
+                MarkerOptions marker = new MarkerOptions()
+                        .position(position)
+                        .title("Coventry");
+
+                marker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
+
+                googleMap.addMarker(marker);
+                CameraPosition cameraPosition = new CameraPosition.Builder()
+                        .target(position)
+                        .zoom(12)
+                        .build();
+                googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+                googleMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(52.4053, -1.4997))
+                        .title("Coventry University")
+                        .snippet("This is the university")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE))
+                );
+
+                /*marker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));*/
+
+                googleMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(52.4129, -1.5032))
+                        .title("Kasbah Night Club"));
+
+                marker.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
+
+            });
+
 
         return view;
     }
 
-    @Override
+ /*   @Override
     public void onMapReady (GoogleMap googleMap)
     {
         Log.i("AppLog", "YAa");
@@ -78,7 +111,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback
         googleMap.addMarker(new MarkerOptions().position(cv).title("Coventry"));
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(cv));
     }
-
+*/
 }
 
 

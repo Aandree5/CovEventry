@@ -13,11 +13,12 @@
     android:orientation="vertical"
     android:gravity="bottom">
 
-    <g3.coveventry.customViews.CovImageView
+    <g3.coveventry.customviews.CovImageView
         android:id="@+id/nav_header_photo"
         android:layout_width="100dp"
         android:layout_height="100dp"
-        app:round="true"/>
+        app:round="true"
+        app:placeholder="@drawable/ic_user_placeholder" />
 
     <TextView
         android:id="@+id/nav_header_name"
