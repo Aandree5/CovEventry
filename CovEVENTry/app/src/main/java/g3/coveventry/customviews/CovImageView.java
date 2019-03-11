@@ -174,8 +174,7 @@ public class CovImageView extends FrameLayout {
                 // Download image from url
                 image = BitmapFactory.decodeStream(urls[0].openConnection().getInputStream());
 
-                if (filePath != null)
-                {
+                if (filePath != null) {
                     // Save image to file
                     FileOutputStream fOutStream = null;
                     try {

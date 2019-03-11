@@ -12,22 +12,21 @@ import retrofit2.http.Query;
 
 /**
  * Interface to connect to twitter API and query about the needed data
- *
  */
 public interface TwitterAPI {
 
     /**
      * Search for tweets with the given properties
      *
-     * @param query (Required) Base query to first filter tweets
-     * @param geocode Define the location from where to get tweets, falls back to user location if tweet has no geolocation
-     * @param lang Define the language of the tweet
-     * @param locale Define the locale of the tweet
-     * @param resultType Type of result, form recent, popular or mixed
-     * @param count Maximum number of tweets to retrieve, max. 100
-     * @param until Date until when to get the tweets
-     * @param sinceId Get tweet from this tweet ID forward
-     * @param maxId Maximum tweet ID to get the tweets to
+     * @param query           (Required) Base query to first filter tweets
+     * @param geocode         Define the location from where to get tweets, falls back to user location if tweet has no geolocation
+     * @param lang            Define the language of the tweet
+     * @param locale          Define the locale of the tweet
+     * @param resultType      Type of result, form recent, popular or mixed
+     * @param count           Maximum number of tweets to retrieve, max. 100
+     * @param until           Date until when to get the tweets
+     * @param sinceId         Get tweet from this tweet ID forward
+     * @param maxId           Maximum tweet ID to get the tweets to
      * @param includeEntities Include tweet entities, like hashtags and places
      * @return A callback as a Search method that has the retrieved tweets
      */
@@ -49,9 +48,9 @@ public interface TwitterAPI {
      * Get users with the given properties
      * Users are retrieved in pages of 20
      *
-     * @param query (Required) Base query to first filter tweets
-     * @param page Page for this query
-     * @param count Maximum number of users to retrieve
+     * @param query           (Required) Base query to first filter tweets
+     * @param page            Page for this query
+     * @param count           Maximum number of users to retrieve
      * @param includeEntities Include users entities
      * @return A callback as a list of users method that has the retrieved users
      */

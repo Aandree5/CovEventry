@@ -1,27 +1,31 @@
-package g3.coveventry;
+package g3.coveventry.user;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
+import android.widget.Toast;
 
 import com.facebook.Profile;
 import com.twitter.sdk.android.core.TwitterCore;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
-import g3.coveventry.utils.CallbackUser;
+import g3.coveventry.database.CallbackDBSimple;
+import g3.coveventry.database.Database;
 
 /**
  * Singleton class to hold user information at runtime
  */
 public class User {
-    // File to save the user photo to
+    // File to save the user profilePicture to
     static final String FILE_USER_PHOTO = "userPhoto.png";
 
     // One and only User instance
@@ -32,19 +36,23 @@ public class User {
     private CallbackUser callback = null;
 
     // Constant values for shared preferences data keys
-    static final String KEY_NAME = "name";
-    static final String KEY_EMAILS = "emails";
-    static final String KEY_PHOTOURL = "photoUrl";
-    static final String KEY_FACEBOOKID = "facebookID";
-    static final String KEY_TWITTERID = "twitterID";
-    static final String KEY_TWITTERUSERNAME = "twiterUsername";
+    static final String KEY_ID = "userID";
+    static final String KEY_NAME = "userName";
+    static final String KEY_USERNAME = "userUsername";
+    static final String KEY_EMAIL = "userEmail";
+    static final String KEY_FACEBOOKID = "userFacebookID";
+    static final String KEY_TWITTERID = "userTwitterID";
+    static final String KEY_VERIFIED = "userVerified";
 
     // User data
+    private long id = 0;
     private String name = null;
-    private Set<String> emails = null;
+    private String username = null;
+    private String email = null;
+    private Bitmap profilePicture = null;
     private String facebookID = null;
     private String twitterID = null;
-    private String twitterUsername = null;
+    private boolean verified = false;
 
 
     /**
@@ -60,21 +68,65 @@ public class User {
     private void persistData() {
         // Check if context still exists
         Context context = contextRef.get();
+
         if (context != null) {
+
             // Update shared preferences
             SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
+            sharedPreferences.putLong(KEY_ID, id);
             sharedPreferences.putString(KEY_NAME, name);
-            sharedPreferences.putStringSet(KEY_EMAILS, emails);
+            sharedPreferences.putString(KEY_EMAIL, email);
             sharedPreferences.putString(KEY_FACEBOOKID, facebookID);
             sharedPreferences.putString(KEY_TWITTERID, twitterID);
-            sharedPreferences.putString(KEY_TWITTERUSERNAME, twitterUsername);
+            sharedPreferences.putString(KEY_USERNAME, username);
+            sharedPreferences.putBoolean(KEY_VERIFIED, verified);
 
             sharedPreferences.apply();
+
+            // If profile picture is set, save it into a file
+            if (profilePicture != null) {
+                // Save profilePicture to file
+                FileOutputStream fOutStream = null;
+                try {
+                    fOutStream = context.openFileOutput(FILE_USER_PHOTO, Context.MODE_PRIVATE);
+
+                    profilePicture.compress(Bitmap.CompressFormat.PNG, 100, fOutStream);
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+
+                } finally {
+                    if (fOutStream != null) {
+                        try {
+                            fOutStream.close();
+
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+
 
             // If set, run callback function
             if (callback != null)
                 callback.userDataUpdated();
+
+            // Save user on database
+            Database.getInstance().saveUser(new CallbackDBSimple() {
+                @Override
+                public void connectionSuccessful() {
+
+                }
+
+                @Override
+                public void connectionFailed(String message) {
+                    Log.e("AppLog", message);
+                    Toast.makeText(context, "Error connecting to database", Toast.LENGTH_SHORT).show();
+                }
+            });
+
         } else
             throw new RuntimeException("Context reference not set, make sure to initialize user first.");
     }
@@ -98,21 +150,27 @@ public class User {
      * Initialize user object, setting context reference and callback function, updates user
      * data from shared preferences and executes callback function
      *
-     * @param context Application context to hold a weak reference to
+     * @param context  Application context to hold a weak reference to
      * @param callback Function to execute when data is updated
      */
-    static void initialize(@NonNull Context context, @Nullable CallbackUser callback) {
+    public static void initialize(@NonNull Context context, @Nullable CallbackUser callback) {
         user.contextRef = new WeakReference<>(context);
         user.callback = callback;
 
         // Update user data, from shared preferences
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
 
+        user.id = sharedPreferences.getLong(KEY_ID, 0);
         user.name = sharedPreferences.getString(KEY_NAME, null);
-        user.emails = sharedPreferences.getStringSet(KEY_EMAILS, null);
+        user.email = sharedPreferences.getString(KEY_EMAIL, null);
         user.facebookID = sharedPreferences.getString(KEY_FACEBOOKID, null);
         user.twitterID = sharedPreferences.getString(KEY_TWITTERID, null);
-        user.twitterUsername = sharedPreferences.getString(KEY_TWITTERUSERNAME, null);
+        user.username = sharedPreferences.getString(KEY_USERNAME, null);
+        user.verified = sharedPreferences.getBoolean(KEY_VERIFIED, false);
+
+        if (new File(FILE_USER_PHOTO).exists()) {
+            user.profilePicture = BitmapFactory.decodeFile(FILE_USER_PHOTO);
+        }
 
         // Check SDKs status
         user.checkSocialMediaAPIStatus();
@@ -122,6 +180,18 @@ public class User {
             callback.userDataUpdated();
     }
 
+
+    public void setUser(long id, String name, String username, String email, Bitmap profilePicture, String facebookID, String twitterID,
+                        boolean verified) {
+        this.id = id;
+        this.name = name;
+        this.username = username;
+        this.email = email;
+        this.profilePicture = profilePicture;
+        this.facebookID = facebookID;
+        this.twitterID = twitterID;
+        this.verified = verified;
+    }
 
     /**
      * Checks if context is still valid and return the user object
@@ -138,6 +208,15 @@ public class User {
         return user;
     }
 
+    /**
+     * Retrieves the user id
+     *
+     * @return The user ID
+     */
+    public long getID() {
+        return id;
+    }
+
 
     /**
      * Retrieve name
@@ -149,23 +228,22 @@ public class User {
     }
 
     /**
-     * Add and email to the set
-     *
-     * @param email Email to be added to the set
-     */
-    public void addEmail(String email) {
-        emails.add(email);
-
-        persistData();
-    }
-
-    /**
      * Retrieve emails
      *
-     * @return Unmodifiable set of the user's emails
+     * @return The user email
      */
-    public Set<String> getEmails() {
-        return Collections.unmodifiableSet(emails);
+    public String getEmail() {
+        return email;
+    }
+
+
+    /**
+     * Retrieve the user profilePicture
+     *
+     * @return The user profile picture
+     */
+    public Bitmap getProfilePicture() {
+        return profilePicture;
     }
 
     /**
@@ -187,12 +265,22 @@ public class User {
     }
 
     /**
-     * Retrieve Twitter username
+     * Retrieve username
      *
-     * @return The user's Twitter username
+     * @return The user's username
      */
-    public String getTwitterUsername() {
-        return twitterUsername;
+    public String getUsername() {
+        return username;
+    }
+
+
+    /**
+     * Check if current user has been verified on Twitter
+     *
+     * @return True if user has been verified, false otherwise
+     */
+    public boolean isVerified() {
+        return verified;
     }
 
 
@@ -220,33 +308,39 @@ public class User {
      * Save given information as data from Facebook - set on object, update shared preferences and
      * execute callback if is set
      *
-     * @param id       Facebook ID of the user
-     * @param name     Facebook name of the user
-     * @param photoUrl Facebook profile picture of the user
-     * @param email    Facebook email of the user
+     * @param id             Facebook ID of the user
+     * @param name           Facebook name of the user
+     * @param profilePicture Facebook profile picture of the user
+     * @param email          Facebook email of the user
      */
-    void saveFacebook(@NonNull String id, @NonNull String name, @Nullable String photoUrl, @NonNull String email) {
-        this.facebookID = id;
-        this.name = name;
+    public void saveFacebook(@NonNull String id, @NonNull String name, @Nullable Bitmap profilePicture, @NonNull String email) {
+      /*  Database.getInstance().getUser(user.id, id, user.twitterID, new CallbackDBSimple() {
+            @Override
+            public void connectionSuccessful() {
+            }
 
-        // If there where already emails add a new, otherwise create a new set
-        if (this.emails != null)
-            this.emails.add(email);
+            @Override
+            public void connectionFailed(String message) {
+                Toast.makeText(contextRef.get(), "Couldn't connect to the database", Toast.LENGTH_SHORT).show();
+            }
+        });*/
 
-        else
-            this.emails = new HashSet<>(Collections.singletonList(email));
 
-        // If photo is given save it to shared preferences, as is not kept on the object
-        if (photoUrl != null) {
-            Context context = contextRef.get();
-            if (context != null)
-                PreferenceManager.getDefaultSharedPreferences(context)
-                        .edit()
-                        .putString(KEY_PHOTOURL, photoUrl)
-                        .apply();
-        }
+        if (!id.equalsIgnoreCase(this.facebookID))
+            this.facebookID = id;
 
-        // Save data to shared preferences and execute callback
+        if (this.name == null)
+            this.name = name;
+
+        // If there is no email set add it
+        if (this.email == null)
+            this.email = email;
+
+        // If there is no profilePicture set add it
+        if (this.profilePicture == null)
+            this.profilePicture = profilePicture;
+
+        // Save data to shared preferences, database and execute callback
         persistData();
     }
 
@@ -255,36 +349,57 @@ public class User {
      * Save given information as data from Twitter - set on object, update shared preferences and
      * execute callback if is set
      *
-     * @param id       Twitter ID of the user
-     * @param name     Twitter name of the user
-     * @param username Twitter username of the user
-     * @param photoUrl Twitter profile picture of the user
-     * @param email    Twitter email of the user
+     * @param id             Twitter ID of the user
+     * @param name           Twitter name of the user
+     * @param username       Twitter username of the user
+     * @param profilePicture Twitter profile picture of the user
+     * @param email          Twitter email of the user
+     * @param verified       If twitter account is verified
      */
-    void saveTwitter(@NonNull String id, @NonNull String name, @NonNull String username,
-                     @Nullable String photoUrl, @NonNull String email) {
-        this.twitterID = id;
-        this.name = name;
-        this.twitterUsername = username;
+    public void saveTwitter(@NonNull String id, @NonNull String name, @NonNull String username, @Nullable Bitmap profilePicture, @NonNull String email, boolean verified) {
+       /* Database.getInstance().getUser(user.id, user.facebookID, id, new CallbackDBSimple() {
+            @Override
+            public void connectionSuccessful() {
 
-        // If there where already emails add a new, otherwise create a new set
-        if (this.emails != null)
-            this.emails.add(email);
 
-        else
-            this.emails = new HashSet<>(Collections.singletonList(email));
+                Log.i("AppLog", user.name);
+                Log.i("AppLog", user.facebookID);
+            }
 
-        // If photo is given save it to shared preferences, as is not kept on the object
-        if (photoUrl != null) {
-            Context context = contextRef.get();
-            if (context != null)
-                PreferenceManager.getDefaultSharedPreferences(context)
-                        .edit()
-                        .putString(KEY_PHOTOURL, photoUrl)
-                        .apply();
-        }
+            @Override
+            public void connectionFailed(String message) {
+                Toast.makeText(contextRef.get(), "Couldn't connect to the database", Toast.LENGTH_SHORT).show();
+            }
+        });*/
 
-        // Save data to shared preferences and execute callback
+
+        if (!id.equalsIgnoreCase(this.twitterID))
+            this.twitterID = id;
+
+        if (this.name == null)
+            this.name = name;
+
+        if (!this.verified)
+            this.verified = verified;
+
+
+        // If there is no username set add it
+        if (this.username == null)
+            this.username = username;
+
+        // If there is no email set add it
+        if (this.email == null)
+            this.email = email;
+
+        // If there is no profilePicture set add it
+        if (this.profilePicture == null)
+            this.profilePicture = profilePicture;
+
+        Log.i("AppLog", user.name);
+        if (user.facebookID != null)
+            Log.i("AppLog", user.facebookID);
+
+        // Save data to shared preferences, database and execute callback
         persistData();
     }
 
@@ -297,10 +412,11 @@ public class User {
         // If only logged in with Facebook, remove all data, otherwise remove just the Facebook id
         if (!isTwitterConnected()) {
             name = null;
-            emails = null;
+            email = null;
             facebookID = null;
+            profilePicture = null;
 
-            // Delete user photo file
+            // Delete user profilePicture file
             //noinspection ResultOfMethodCallIgnored
             new File(FILE_USER_PHOTO).delete();
 
@@ -310,9 +426,8 @@ public class User {
                 SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
                 sharedPreferences.remove(KEY_NAME);
-                sharedPreferences.remove(KEY_EMAILS);
+                sharedPreferences.remove(KEY_EMAIL);
                 sharedPreferences.remove(KEY_FACEBOOKID);
-                sharedPreferences.remove(KEY_PHOTOURL);
 
                 sharedPreferences.apply();
             }
@@ -342,11 +457,12 @@ public class User {
         // If only logged in with Twitter, remove all data, otherwise remove just the Twitter id and username
         if (!isFacebookConnected()) {
             name = null;
-            emails = null;
+            username = null;
+            email = null;
             twitterID = null;
-            twitterUsername = null;
+            profilePicture = null;
 
-            // Delete user photo file
+            // Delete user profilePicture file
             //noinspection ResultOfMethodCallIgnored
             new File(FILE_USER_PHOTO).delete();
 
@@ -356,10 +472,9 @@ public class User {
                 SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
                 sharedPreferences.remove(KEY_NAME);
-                sharedPreferences.remove(KEY_EMAILS);
+                sharedPreferences.remove(KEY_EMAIL);
                 sharedPreferences.remove(KEY_TWITTERID);
-                sharedPreferences.remove(KEY_TWITTERUSERNAME);
-                sharedPreferences.remove(KEY_PHOTOURL);
+                sharedPreferences.remove(KEY_USERNAME);
 
                 sharedPreferences.apply();
             }
@@ -369,7 +484,7 @@ public class User {
                 callback.userDataUpdated();
         } else {
             twitterID = null;
-            twitterUsername = null;
+            username = null;
 
             // Remove id and username from shared preferences
             Context context = contextRef.get();
@@ -377,10 +492,11 @@ public class User {
                 SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
                 sharedPreferences.remove(KEY_TWITTERID);
-                sharedPreferences.remove(KEY_TWITTERUSERNAME);
+                sharedPreferences.remove(KEY_USERNAME);
 
                 sharedPreferences.apply();
             }
         }
     }
+
 }
