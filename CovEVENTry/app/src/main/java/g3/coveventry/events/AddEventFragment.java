@@ -2,6 +2,8 @@ package g3.coveventry.events;
 
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -17,9 +19,15 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Objects;
 
 import g3.coveventry.R;
@@ -33,7 +41,7 @@ import g3.coveventry.database.Database;
 public class AddEventFragment extends Fragment {
 
     ImageView imageView;
-    Button ImageBtn, CancelBtn;
+    Button ImageBtn, CancelBtn, SaveBtn;
     EditText EventName, EventVenue, EventPostCode, EventDate, EventDescription;
     private static final int PICK_IMAGE = 100;
     Uri imageUri;
@@ -54,6 +62,7 @@ public class AddEventFragment extends Fragment {
         imageView = view.findViewById(R.id.imageView);
         ImageBtn = view.findViewById(R.id.ImageBtn);
         CancelBtn = view.findViewById(R.id.CancelBtn);
+        SaveBtn = view.findViewById(R.id.SaveBtn);
         EventName = view.findViewById(R.id.EventName);
         EventVenue = view.findViewById(R.id.EventVenue);
         EventPostCode = view.findViewById(R.id.EventPostCode);
@@ -73,6 +82,54 @@ public class AddEventFragment extends Fragment {
             imageView.setImageResource(0);
         });
 
+
+        SaveBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                long id = 1;
+                String name = EventName.getText().toString();
+                String description = EventDescription.getText().toString();
+                Bitmap image = null;
+                try {
+                    image = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), imageUri);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                String venue = EventVenue.getText().toString();
+                String postcode = EventPostCode.getText().toString();
+                SimpleDateFormat simpleDate = new SimpleDateFormat( "ddMMyy", Locale.getDefault());
+                Date date = null;
+                try
+                {
+                    date = simpleDate.parse(EventDate.getText().toString());
+                }
+                catch (ParseException e)
+                {
+                    e.printStackTrace();
+                }
+                Database.getInstance().addEvent(id, name, description, image, venue, postcode, date, new CallbackDBSimple() {
+                    @Override
+                    public void connectionSuccessful() {
+                        Log.i("yes", "yes");
+                        Toast.makeText(getContext(),"Your Event have been saved",
+                                Toast.LENGTH_LONG).show();
+                        EventName.setText("");
+                        EventVenue.setText("");
+                        EventPostCode.setText("");
+                        EventDate.setText("");
+                        EventDescription.setText("");
+                        imageView.setImageResource(0);
+                    }
+
+                    @Override
+                    public void connectionFailed(String message) {
+                        Log.i("no", "no");
+                    }
+                });
+            }
+        });
     }
 
     // Open local gallery
