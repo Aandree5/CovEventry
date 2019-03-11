@@ -21,7 +21,7 @@ import com.facebook.login.LoginResult;
 import java.util.Arrays;
 
 import g3.coveventry.R;
-import g3.coveventry.User;
+import g3.coveventry.user.User;
 
 
 /**
