@@ -11,6 +11,6 @@
 
     <declare-styleable name="CovImageView">
         <attr name="round" format="boolean"/>
-        <attr name="placeholder" format="reference"/>
+        <attr name="placeholder" format="reference" />
     </declare-styleable>
 </resources>

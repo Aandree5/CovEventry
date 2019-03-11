@@ -16,7 +16,6 @@ import java.util.Locale;
 
 /**
  * Fetch user current city thought user location services
- *
  */
 public class FetchAddressIntentService extends IntentService {
     // Receiver to send back the calculated information
@@ -33,7 +32,6 @@ public class FetchAddressIntentService extends IntentService {
 
     /**
      * Constructor
-     *
      */
     public FetchAddressIntentService() {
         super("FetchAddress");
@@ -60,7 +58,7 @@ public class FetchAddressIntentService extends IntentService {
 
         try {
             // Get a list of addresses form given location
-            addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(),1);
+            addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
 
         } catch (IOException ioException) {
             errorMessage = "Service not available";
@@ -73,7 +71,7 @@ public class FetchAddressIntentService extends IntentService {
         }
 
         // When no address is found.
-        if (addresses == null || addresses.size()  == 0) {
+        if (addresses == null || addresses.size() == 0) {
             if (errorMessage.isEmpty()) {
                 errorMessage = "No addresses found";
                 Log.e("AppLog", errorMessage);
@@ -92,9 +90,9 @@ public class FetchAddressIntentService extends IntentService {
      * Handle returning information to the activity that requested the location information
      *
      * @param resultCode Code to say if was successful or failed (SUCCESS_RESULT | FAILURE_RESULT)
-     * @param city City found for the given location
-     * @param lat Latitude for the given location
-     * @param lon Longitude for the given location
+     * @param city       City found for the given location
+     * @param lat        Latitude for the given location
+     * @param lon        Longitude for the given location
      */
     private void deliverResultToReceiver(int resultCode, String city, double lat, double lon) {
         // Put information into a bundle

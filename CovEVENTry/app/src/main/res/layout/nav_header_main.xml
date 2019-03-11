@@ -18,7 +18,7 @@
         android:layout_width="100dp"
         android:layout_height="100dp"
         app:round="true"
-        app:placeholder="@drawable/ic_user_placeholder"/>
+        app:placeholder="@drawable/ic_user_placeholder" />
 
     <TextView
         android:id="@+id/nav_header_name"

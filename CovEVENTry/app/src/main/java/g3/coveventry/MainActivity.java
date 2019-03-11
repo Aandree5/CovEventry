@@ -25,6 +25,7 @@ import android.view.MenuItem;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.SupportMapFragment;
 import com.twitter.sdk.android.core.DefaultLogger;
 import com.twitter.sdk.android.core.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
@@ -94,7 +95,11 @@ public class MainActivity extends AppCompatActivity {
                     break;
 
                 case R.id.nav_map:
-                    Toast.makeText(getApplicationContext(), "Load map fragment", Toast.LENGTH_SHORT).show();
+                    toolbar.setTitle("Maps");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new MapFragment())
+                            .addToBackStack(null)
+                            .commit();
                     break;
 
 
