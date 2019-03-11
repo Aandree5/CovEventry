@@ -20,7 +20,6 @@ import java.lang.ref.WeakReference;
 
 import g3.coveventry.database.CallbackDBSimple;
 import g3.coveventry.database.Database;
-import g3.coveventry.utils.CallbackUser;
 
 /**
  * Singleton class to hold user information at runtime
