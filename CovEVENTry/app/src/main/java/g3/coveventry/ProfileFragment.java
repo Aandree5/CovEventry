@@ -10,6 +10,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import g3.coveventry.user.User;
+
 import static java.nio.file.Files.exists;
 
 public class ProfileFragment extends Fragment {
@@ -24,7 +27,7 @@ public class ProfileFragment extends Fragment {
 
         TextView t = view.findViewById(R.id.twt_username);
 
-        t.setText(User.getCurrentUser().getTwitterUsername());
+        t.setText(User.getCurrentUser().getUsername());
         //not sure about this one
         TextView w = view.findViewById(R.id.fac_username);
         w.setText(User.getCurrentUser().getName());

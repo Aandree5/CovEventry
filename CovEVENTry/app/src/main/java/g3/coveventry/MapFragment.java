@@ -47,10 +47,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
-/*import g3.coveventry.customViews.CovImageView;
- */
-import static g3.coveventry.User.FILE_USER_PHOTO;
-import static g3.coveventry.User.KEY_PHOTOURL;
 
 public class MapFragment extends Fragment
 {
