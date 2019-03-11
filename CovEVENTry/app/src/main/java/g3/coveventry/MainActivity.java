@@ -3,13 +3,11 @@ package g3.coveventry;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -33,20 +31,13 @@ import com.twitter.sdk.android.core.Twitter;
 import com.twitter.sdk.android.core.TwitterAuthConfig;
 import com.twitter.sdk.android.core.TwitterConfig;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.MessageDigest;
 
 import g3.coveventry.customviews.CovImageView;
 import g3.coveventry.database.Database;
 import g3.coveventry.events.AddEventFragment;
 import g3.coveventry.events.EventsFragment;
-
-import static g3.coveventry.User.FILE_USER_PHOTO;
-import static g3.coveventry.User.KEY_PHOTOURL;
+import g3.coveventry.user.User;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -54,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 100;
 
     NavigationView navigationView;
+    BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,9 +102,6 @@ public class MainActivity extends AppCompatActivity {
                             .commit();
                     break;
 
-                case R.id.nav_database:
-                    Toast.makeText(getApplicationContext(), "Load database fragment", Toast.LENGTH_SHORT).show();
-                    break;
 
                 case R.id.nav_settings:
                     Toast.makeText(getApplicationContext(), "Open settings page", Toast.LENGTH_SHORT).show();
@@ -121,6 +110,23 @@ public class MainActivity extends AppCompatActivity {
 
             // Close drawer after choosing an option
             drawer.closeDrawer(GravityCompat.START);
+
+            return true;
+        });
+
+        bottomNavigationView = findViewById(R.id.bottom_nav_view);
+        bottomNavigationView.setOnNavigationItemSelectedListener(menuItem -> {
+
+            switch (menuItem.getItemId()) {
+                case R.id.bottom_nav_messages:
+                    break;
+
+                case R.id.bottom_nav_create_event:
+                    break;
+
+                case R.id.bottom_nav_notifications:
+                    break;
+            }
 
             return true;
         });
@@ -146,38 +152,11 @@ public class MainActivity extends AppCompatActivity {
                 ((TextView) navHeader.findViewById(R.id.nav_header_name)).setText(getResources().getString(R.string.nav_header_name_guest));
 
 
-            // Get photo from file, if was already downloaded, otherwise download it from the kept link
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-            if (new File(FILE_USER_PHOTO).exists()) {
-                FileInputStream fInpStream = null;
-                try {
-                    fInpStream = openFileInput(FILE_USER_PHOTO);
+            // Update user photo
+            if (User.getCurrentUser().getProfilePicture() != null)
+                ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).setImageBitmap(User.getCurrentUser().getProfilePicture());
 
-                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
-                            .setImageBitmap(BitmapFactory.decodeStream(fInpStream));
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-
-                } finally {
-                    if (fInpStream != null) {
-                        try {
-                            fInpStream.close();
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            } else if (sharedPreferences.getString(KEY_PHOTOURL, null) != null) {
-                try {
-                    ((CovImageView) navHeader.findViewById(R.id.nav_header_photo))
-                            .setImageBitmap(new URL(sharedPreferences.getString(KEY_PHOTOURL, null)), FILE_USER_PHOTO);
-
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
-            } else
+            else
                 ((CovImageView) navHeader.findViewById(R.id.nav_header_photo)).resetImage();
         });
 

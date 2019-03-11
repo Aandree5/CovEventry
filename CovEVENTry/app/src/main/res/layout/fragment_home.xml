@@ -3,16 +3,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/dr_background"
     android:orientation="vertical"
     tools:context=".HomeFragment">
 
-    <TextView
+    <ImageView
+        android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="20dp"
-        android:gravity="center"
-        android:text="HOME"
-        android:textAppearance="@style/Base.TextAppearance.AppCompat.Display4" />
+        android:baselineAligned="false"
+        android:src="@drawable/logo"
+        android:padding="10dp"/>
 
     <g3.coveventry.customviews.FacebookLoginButton
         android:id="@+id/login_facebook"

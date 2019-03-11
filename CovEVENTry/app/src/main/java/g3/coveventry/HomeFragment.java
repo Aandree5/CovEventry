@@ -1,6 +1,9 @@
 package g3.coveventry;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -11,7 +14,6 @@ import android.view.ViewGroup;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.GraphRequest;
-import com.facebook.HttpMethod;
 import com.facebook.login.LoginResult;
 import com.twitter.sdk.android.core.Callback;
 import com.twitter.sdk.android.core.Result;
@@ -24,8 +26,13 @@ import com.twitter.sdk.android.core.services.AccountService;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.net.URL;
+
 import g3.coveventry.customviews.FacebookLoginButton;
 import g3.coveventry.customviews.TwitterLoginButton;
+import g3.coveventry.user.CallbackDownloadPicture;
+import g3.coveventry.user.User;
 import retrofit2.Call;
 
 
@@ -49,28 +56,37 @@ public class HomeFragment extends Fragment {
             public void onSuccess(final LoginResult loginResult) {
 
                 // If login is successful, create the request for the needed user data
-                Bundle params = new Bundle();
-                params.putString("fields", "name,email,picture.type(normal)");
-
-                new GraphRequest(loginResult.getAccessToken(), "me", params, HttpMethod.GET, response -> {
+                GraphRequest request = GraphRequest.newMeRequest(loginResult.getAccessToken(), (object, response) -> {
                     if (response != null) {
+                        JSONObject data = response.getJSONObject();
+
                         try {
-                            JSONObject data = response.getJSONObject();
-                            String photoUrl = null;
+                            // Download user picture if exists, run code to save user only after image was downloaded
+                            // picture is null if there was no image
+                            new DownloadProfilePicture(picture -> {
+                                try {
+                                    // Save retrieved user information
+                                    User.getCurrentUser().saveFacebook(data.getString("id"), data.getString("name"),
+                                            picture, data.getString("email"));
 
-                            // Get photo URL
-                            if (data.has("picture"))
-                                photoUrl = data.getJSONObject("picture").getJSONObject("data").getString("url");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
 
-                            User.getCurrentUser().saveFacebook(loginResult.getAccessToken().getUserId(),
-                                    data.getString("name"), photoUrl, data.getString("email"));
 
+                            }).execute(data.getJSONObject("picture").getJSONObject("data").getString("url"));
 
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
-                }).executeAsync();
+                });
+
+                // Set request parameters and execute request
+                Bundle parameters = new Bundle();
+                parameters.putString("fields", "id,name,email,picture");
+                request.setParameters(parameters);
+                request.executeAsync();
             }
 
             @Override
@@ -92,8 +108,16 @@ public class HomeFragment extends Fragment {
                 call.enqueue(new Callback<com.twitter.sdk.android.core.models.User>() {
                     @Override
                     public void success(Result<com.twitter.sdk.android.core.models.User> userResult) {
-                        User.getCurrentUser().saveTwitter(String.valueOf(result.data.getUserId()), userResult.data.name,
-                                userResult.data.screenName, userResult.data.profileImageUrl, userResult.data.email);
+                        // Download user picture if exists, run code to save user only after image was downloaded
+                        // picture is null if there was no image
+                        new DownloadProfilePicture(picture -> {
+
+                            // Save retrieved user information
+                            User.getCurrentUser().saveTwitter(String.valueOf(result.data.getUserId()), userResult.data.name,
+                                    userResult.data.screenName, picture, userResult.data.email, userResult.data.verified);
+
+                        }).execute(userResult.data.profileImageUrl);
+
                     }
 
                     @Override
@@ -118,5 +142,42 @@ public class HomeFragment extends Fragment {
         twitterLoginButton.onActivityResult(requestCode, resultCode, data);
 
         super.onActivityResult(requestCode, resultCode, data);
+    }
+}
+
+/**
+ * Class to download user social media pictures in the background
+ */
+class DownloadProfilePicture extends AsyncTask<String, Void, Bitmap> {
+    private CallbackDownloadPicture callback;
+
+    // Set callback with code to run after getting the image
+    DownloadProfilePicture(CallbackDownloadPicture callback) {
+        this.callback = callback;
+    }
+
+
+    @Override
+    protected Bitmap doInBackground(String... urls) {
+        Bitmap profilePicture = null;
+        try {
+            // Download image from url
+            profilePicture = BitmapFactory.decodeStream(new URL(urls[0]).openConnection().getInputStream());
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return profilePicture;
+    }
+
+    @Override
+    protected void onPostExecute(Bitmap bitmap) {
+        super.onPostExecute(bitmap);
+
+        // After image downloaded call method to run code
+        // bitmap will be null if there was no image to download
+        callback.pictureDownloaded(bitmap);
     }
 }
