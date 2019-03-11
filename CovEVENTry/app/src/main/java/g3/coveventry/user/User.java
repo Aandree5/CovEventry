@@ -115,7 +115,7 @@ public class User {
                 callback.userDataUpdated();
 
             // Save user on database
-            Database.getInstance().saveUser(this, new CallbackDBSimple() {
+            Database.getInstance().saveUser(new CallbackDBSimple() {
                 @Override
                 public void connectionSuccessful() {
 
@@ -181,6 +181,18 @@ public class User {
             callback.userDataUpdated();
     }
 
+
+    public void setUser(long id, String name, String username, String email, Bitmap profilePicture, String facebookID, String twitterID,
+                        boolean verified) {
+        this.id = id;
+        this.name = name;
+        this.username = username;
+        this.email = email;
+        this.profilePicture = profilePicture;
+        this.facebookID = facebookID;
+        this.twitterID = twitterID;
+        this.verified = verified;
+    }
 
     /**
      * Checks if context is still valid and return the user object
@@ -303,8 +315,23 @@ public class User {
      * @param email          Facebook email of the user
      */
     public void saveFacebook(@NonNull String id, @NonNull String name, @Nullable Bitmap profilePicture, @NonNull String email) {
-        this.facebookID = id;
-        this.name = name;
+      /*  Database.getInstance().getUser(user.id, id, user.twitterID, new CallbackDBSimple() {
+            @Override
+            public void connectionSuccessful() {
+            }
+
+            @Override
+            public void connectionFailed(String message) {
+                Toast.makeText(contextRef.get(), "Couldn't connect to the database", Toast.LENGTH_SHORT).show();
+            }
+        });*/
+
+
+        if (!id.equalsIgnoreCase(this.facebookID))
+            this.facebookID = id;
+
+        if (this.name == null)
+            this.name = name;
 
         // If there is no email set add it
         if (this.email == null)
@@ -331,9 +358,30 @@ public class User {
      * @param verified       If twitter account is verified
      */
     public void saveTwitter(@NonNull String id, @NonNull String name, @NonNull String username, @Nullable Bitmap profilePicture, @NonNull String email, boolean verified) {
-        this.twitterID = id;
-        this.name = name;
-        this.verified = verified;
+       /* Database.getInstance().getUser(user.id, user.facebookID, id, new CallbackDBSimple() {
+            @Override
+            public void connectionSuccessful() {
+
+
+                Log.i("AppLog", user.name);
+                Log.i("AppLog", user.facebookID);
+            }
+
+            @Override
+            public void connectionFailed(String message) {
+                Toast.makeText(contextRef.get(), "Couldn't connect to the database", Toast.LENGTH_SHORT).show();
+            }
+        });*/
+
+
+        if (!id.equalsIgnoreCase(this.twitterID))
+            this.twitterID = id;
+
+        if (this.name == null)
+            this.name = name;
+
+        if (!this.verified)
+            this.verified = verified;
 
 
         // If there is no username set add it
@@ -347,6 +395,10 @@ public class User {
         // If there is no profilePicture set add it
         if (this.profilePicture == null)
             this.profilePicture = profilePicture;
+
+        Log.i("AppLog", user.name);
+        if (user.facebookID != null)
+            Log.i("AppLog", user.facebookID);
 
         // Save data to shared preferences, database and execute callback
         persistData();
