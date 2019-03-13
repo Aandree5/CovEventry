@@ -111,9 +111,23 @@
             
             if ($stmt->execute())
             {
-                $data["status"] = "successful";
-           
-                echo json_encode($data);
+                // If successful return the created user id
+                $stmt = $conn->prepare("SELECT id 
+                                        FROM Users
+                                        WHERE facebook_id = :facebook_id OR twitter_id = :twitter_id");
+
+
+                $stmt->bindParam(":facebook_id", $facebook_id);
+                $stmt->bindParam(":twitter_id", $twitter_id);
+                
+            
+                if ($stmt->execute())
+                {
+                    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                    if ($row)
+                        echo json_encode($row);
+                }
             }
 
         }
