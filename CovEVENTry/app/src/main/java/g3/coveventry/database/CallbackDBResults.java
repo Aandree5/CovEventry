@@ -7,7 +7,7 @@ public interface CallbackDBResults<T> extends CallbackDatabase {
     /**
      * Called on successful connection, with the results from the connection
      *
-     * @param results HashMap with the data retrieved from the database
+     * @param results Data retrieved from the database
      */
-    void connectionSuccessful(ArrayList<T> results);
+    void connectionSuccessful(T results);
 }

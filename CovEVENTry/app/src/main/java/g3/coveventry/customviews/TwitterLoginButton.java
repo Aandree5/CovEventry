@@ -83,15 +83,23 @@ public class TwitterLoginButton extends BaseLoginButton {
                     }
                 });
             } else {
+                int message = R.string.remove_account;
+
                 // Show dialog to confirm logout
+                if (!User.getCurrentUser().isFacebookConnected())
+                    message = R.string.remove_all_data;
+
                 new AlertDialog.Builder(context)
                         .setTitle("Twitter")
-                        .setMessage(String.format(res.getString(R.string.logged_in_as), User.getCurrentUser().getUsername()))
+                        .setMessage(message)
                         .setCancelable(true)
                         .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
-                            TwitterCore.getInstance().getSessionManager().clearActiveSession();
 
+                            // Only really log out after removing data, user still checks if Twitter session if logged
+                            // and will call remove again
                             User.getCurrentUser().removeTwitter();
+
+                            TwitterCore.getInstance().getSessionManager().clearActiveSession();
 
                             // Update text
                             setText(res.getString(R.string.login_twitter));
@@ -99,7 +107,6 @@ public class TwitterLoginButton extends BaseLoginButton {
                         .setNegativeButton(res.getString(R.string.cancel), null)
                         .create()
                         .show();
-
             }
         });
     }

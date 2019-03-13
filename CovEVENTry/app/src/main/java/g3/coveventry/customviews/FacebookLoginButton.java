@@ -13,7 +13,6 @@ import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdkNotInitializedException;
-import com.facebook.Profile;
 import com.facebook.internal.CallbackManagerImpl;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
@@ -98,15 +97,23 @@ public class FacebookLoginButton extends BaseLoginButton {
                 LoginManager.getInstance().logInWithReadPermissions(getActivity(), Arrays.asList("public_profile", "email"));
 
             } else {
+                int message = R.string.remove_account;
+
                 // Show dialog to confirm logout
+                if (!User.getCurrentUser().isTwitterConnected())
+                    message = R.string.remove_all_data;
+
                 new AlertDialog.Builder(context)
                         .setTitle("Facebook")
-                        .setMessage(String.format(res.getString(R.string.logged_in_as), Profile.getCurrentProfile().getName()))
+                        .setMessage(message)
                         .setCancelable(true)
                         .setPositiveButton(res.getString(R.string.logout), (dialog1, which) -> {
-                            LoginManager.getInstance().logOut();
 
+                            // Only really log out after removing data, user still checks if Facebook manager if logged
+                            // and will call remove again
                             User.getCurrentUser().removeFacebook();
+
+                            LoginManager.getInstance().logOut();
 
                             // Update text, there's no callback on log out, so the text has to be updated here
                             setText(res.getString(R.string.login_facebook));

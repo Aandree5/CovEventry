@@ -4,13 +4,11 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
+import android.util.Pair;
 
 
 import org.json.JSONArray;
@@ -34,7 +32,6 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import g3.coveventry.events.Event;
-import g3.coveventry.user.User;
 
 public class Database {
     // One and only Database instance
@@ -46,11 +43,25 @@ public class Database {
     private ProgressDialog progressDialog;
 
     // Constants
+    @SuppressWarnings("FieldCanBeLocal")
     private final String dbURL = "https://coveventry.andrefmsilva.coventry.domains/";
+    @SuppressWarnings("FieldCanBeLocal")
     private final String FILE_CREATE_EVENT = dbURL + "create_event.php";
+    @SuppressWarnings("FieldCanBeLocal")
     private final String FILE_GET_EVENTS = dbURL + "get_events.php";
+    @SuppressWarnings("FieldCanBeLocal")
     private final String FILE_SAVE_USER = dbURL + "save_user.php";
+    @SuppressWarnings("FieldCanBeLocal")
     private final String FILE_GET_USER = dbURL + "get_user.php";
+    @SuppressWarnings("FieldCanBeLocal")
+    private final String FILE_REMOVE_USER = dbURL + "remove_user.php";
+
+    // Enumerator to check which id to remove from database
+    public enum ID {
+        USER,
+        FACEBOOK,
+        TWITTER
+    }
 
     /**
      * Private constructor so there is no instantiation outside class
@@ -187,7 +198,7 @@ public class Database {
      * @param date     Date to request the database for events
      * @param callback Callback to return the retrieved events
      */
-    public void getEvents(Date date, @NonNull CallbackDBResults<Event> callback) {
+    public void getEvents(Date date, @NonNull CallbackDBResults<ArrayList<Event>> callback) {
         startDialog("Retrieving event", "Searching for events around you");
 
         // Define the date format for MySQL to handle, only date to search for the entire day
@@ -257,10 +268,18 @@ public class Database {
     /**
      * Saves a given user to the database
      *
+     * @param id ID of the user
+     * @param name Name of the uer
+     * @param username Username of the user
+     * @param email Email of the user
+     * @param profilePicture Profile picture of the user
+     * @param facebookID Facebook ID or the user
+     * @param twitterID Twitter ID of the user
+     * @param verified Whether the user is verified or not
      * @param callback Interface to be called according to connection progress
      */
-    public void saveUser(@NonNull CallbackDBSimple callback) {
-        User user = User.getCurrentUser();
+    public void saveUser(long id, String name, String username, String email, Bitmap profilePicture, String facebookID, String twitterID,
+                         boolean verified, @NonNull CallbackDBResults<Pair<String, String>> callback) {
 
         // Start dialog progress
         startDialog("Saving user", "Saving user information");
@@ -270,32 +289,32 @@ public class Database {
         HashMap<String, String> requestInfo = new HashMap<>();
 
         // Required information
-        requestInfo.put("name", user.getName());
-        requestInfo.put("email", user.getEmail());
-        requestInfo.put("verified", (user.isVerified() ? "1" : "0"));
+        requestInfo.put("name", name);
+        requestInfo.put("email", email);
+        requestInfo.put("verified", (verified ? "1" : "0"));
 
 
         // Optional set of information, only send it is set
-        if (user.getID() != 0)
-            requestInfo.put("id", String.valueOf(user.getID()));
+        if (id != 0)
+            requestInfo.put("id", String.valueOf(id));
 
-        if (user.getFacebookID() != null)
-            requestInfo.put("facebook_id", user.getFacebookID());
+        if (facebookID != null)
+            requestInfo.put("facebook_id", facebookID);
 
-        if (user.getTwitterID() != null)
-            requestInfo.put("twitter_id", user.getTwitterID());
+        if (twitterID != null)
+            requestInfo.put("twitter_id", twitterID);
 
-        if (user.getUsername() != null)
-            requestInfo.put("username", user.getUsername());
+        if (username != null)
+            requestInfo.put("username", username);
 
         // Compress image on a background task, to no prevent the UI thread from building the dialog
         AsyncTask.execute(() -> {
 
             // If an image was set, prepare it to be sent to the database
-            if (user.getProfilePicture() != null) {
+            if (profilePicture != null) {
                 // Convert image to array of bytes
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                user.getProfilePicture().compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+                profilePicture.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
                 byte[] imageBytes = byteArrayOutputStream.toByteArray();
 
                 // Encode array of byte into a string to be stored in the database
@@ -306,7 +325,20 @@ public class Database {
             new connectMySQL(FILE_SAVE_USER, requestInfo, new connectMySQL.CallbackMySQLConnection() {
                 @Override
                 public void connectionSuccessful(JSONArray results) {
-                    callback.connectionSuccessful();
+                    Pair<String, String> data = new Pair<>("", "");
+
+                    // If created user the id is returned, if updated no id is returned
+                    if (results.length() > 0) {
+                        try {
+                            JSONObject resObj = results.getJSONObject(0);
+                            data = new Pair<>("id", resObj.getString("id"));
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    callback.connectionSuccessful(data);
                 }
 
                 @Override
@@ -329,55 +361,114 @@ public class Database {
     }
 
 
-    public void getUser(long id, String facebookID, String twitterID, @NonNull CallbackDBSimple callback) {
-        User user = User.getCurrentUser();
-
+    /**
+     * Retrieve user stored user dara, from user id, facebook id or twitter id
+     *
+     * @param id         The user ID
+     * @param facebookID The user Facebook ID
+     * @param twitterID  The user Twitter ID
+     * @param callback   Callback to return the retrieved data to
+     */
+    public void getUser(long id, String facebookID, String twitterID, @NonNull CallbackDBResults<HashMap<String, String>> callback) {
         // Start dialog progress
-        startDialog("Saving user", "Saving user information");
+        startDialog("Getting user data", "Retrieving user information");
 
         // Prepare HashMap with values to send to the database
         HashMap<String, String> requestInfo = new HashMap<>();
 
-        // Only set the information that was set
-        if (user.getID() != 0)
-            requestInfo.put("id", String.valueOf(user.getID()));
+        // Only send the information that was set
+        if (id != 0)
+            requestInfo.put("id", String.valueOf(id));
 
-        if (user.getFacebookID() != null)
-            requestInfo.put("facebook_id", user.getFacebookID());
+        if (facebookID != null)
+            requestInfo.put("facebook_id", facebookID);
 
-        if (user.getTwitterID() != null)
-            requestInfo.put("twitter_id", user.getTwitterID());
+        if (twitterID != null)
+            requestInfo.put("twitter_id", twitterID);
 
         // Create connection to send the information to the database and handle callback calls
-        new connectMySQL(FILE_SAVE_USER, requestInfo, new connectMySQL.CallbackMySQLConnection() {
+        new connectMySQL(FILE_GET_USER, requestInfo, new connectMySQL.CallbackMySQLConnection() {
             @Override
             public void connectionSuccessful(JSONArray results) {
-                try {
-                    JSONObject userObj = results.getJSONObject(0);
-                    Bitmap profilePicture = null;
+                HashMap<String, String> data = new HashMap<>();
 
-                    // If an image was set, decompress it into a bitmap
-                    if (userObj.has("profile_picture")) {
-                        try {
-                            byte[] imageBytes = Base64.decode(userObj.getString("profile_picture"), Base64.DEFAULT);
+                if (results.length() > 0) {
+                    // Read data into a HasMap
+                    try {
+                        JSONObject userObj = results.getJSONObject(0);
 
-                            profilePicture = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                        data.put("id", userObj.getString("id"));
+                        data.put("name", userObj.getString("name"));
+                        data.put("username", userObj.getString("username"));
+                        data.put("email", userObj.getString("email"));
+                        data.put("profile_picture", userObj.getString("profile_picture"));
+                        data.put("facebook_id", userObj.getString("facebook_id"));
+                        data.put("twitter_id", userObj.getString("twitter_id"));
+                        data.put("verified", userObj.getString("verified"));
 
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
 
-                    User.getCurrentUser().setUser(Long.valueOf(userObj.getString("id")), userObj.getString("name"),
-                            userObj.getString("username"), userObj.getString("email"), profilePicture,
-                            userObj.getString("facebook_id"), userObj.getString("ttwitter_id"),
-                            (userObj.getString("verified") == "1" ? true : false));
-
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
 
+                callback.connectionSuccessful(data);
+            }
 
+            @Override
+            public void connectionStarted() {
+                callback.connectionStarted();
+            }
+
+            @Override
+            public void connectionFinished() {
+                callback.connectionFinished();
+            }
+
+            @Override
+            public void connectionFailed(String message) {
+                callback.connectionFailed(message);
+            }
+        }).execute();
+    }
+
+
+    /**
+     * Remove user information from database, idType define which information to remove
+     * ID.User - Removes everything about the user
+     * ID.Facebook - Removes the facebook ID
+     * ID.Twitter - Removes the Twitter ID
+     *
+     * @param idType   Type of id to send to webservices
+     * @param id       ID to send to webservices
+     * @param callback Callback to update of progress
+     */
+    public void removeUser(ID idType, String id, @NonNull CallbackDBSimple callback) {
+        // Start dialog progress
+        startDialog("Remove data", "Removing user information");
+
+        // Prepare HashMap with values to send to the database
+        HashMap<String, String> requestInfo = new HashMap<>();
+
+        // Check which date to send
+        switch (idType) {
+            case USER: // Removes everything about the user
+                requestInfo.put("id", id);
+                break;
+
+            case FACEBOOK: // Removes the facebook ID
+                requestInfo.put("facebook_id", id);
+                break;
+
+            case TWITTER: // Removes the Twitter ID
+                requestInfo.put("twitter_id", id);
+                break;
+        }
+
+        // Create connection to send the information to the database and handle callback calls
+        new connectMySQL(FILE_REMOVE_USER, requestInfo, new connectMySQL.CallbackMySQLConnection() {
+            @Override
+            public void connectionSuccessful(JSONArray results) {
                 callback.connectionSuccessful();
             }
 
@@ -397,6 +488,7 @@ public class Database {
             }
         }).execute();
     }
+
 }
 
 /**

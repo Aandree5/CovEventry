@@ -138,7 +138,7 @@ public class EventsFragment extends Fragment {
         events.clear();
 
         // Load events from database
-        Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<Event>() {
+        Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<ArrayList<Event>>() {
             @Override
             public void connectionSuccessful(ArrayList<Event> results) {
                 if (!results.isEmpty()) {

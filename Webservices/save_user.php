@@ -58,14 +58,14 @@
         }
         
 
-        // Sanitize user input
+        // Sanitize user input, set value to null when strings are empty
         $id = htmlspecialchars(strip_tags($id));
         $name = htmlspecialchars(strip_tags($name));
-        $username = htmlspecialchars(strip_tags($username));
+        $username = ($username != "" ? htmlspecialchars(strip_tags($username)) : null);
         $email = htmlspecialchars(strip_tags($email));
-        $profile_picture = htmlspecialchars(strip_tags($profile_picture));
-        $facebook_id = htmlspecialchars(strip_tags($facebook_id));
-        $twitter_id = htmlspecialchars(strip_tags($twitter_id));
+        $profile_picture = ($profile_picture != "" ? htmlspecialchars(strip_tags($profile_picture)) : null);
+        $facebook_id = ($facebook_id != "" ? htmlspecialchars(strip_tags($facebook_id)) : null);
+        $twitter_id = ($twitter_id != "" ? htmlspecialchars(strip_tags($twitter_id)) : null);
         $verified = htmlspecialchars(strip_tags($verified));
 
         // Convert from string to int, to be used as a bit type on the database
@@ -79,6 +79,7 @@
                                                     twitter_id = :twitter_id, verified = :verified
                                                     WHERE id = :id");
 
+            // Bind parameters
             $stmt->bindParam(":id", $id, PDO::PARAM_INT);
             $stmt->bindParam(":name", $name);
             $stmt->bindParam(":username", $username);
@@ -99,6 +100,7 @@
             $stmt = $conn->prepare("INSERT INTO Users(name, username, email, profile_picture, facebook_id, twitter_id, verified) 
                                             VALUES (:name, :username, :email, :profile_picture, :facebook_id, :twitter_id, :verified)");
 
+            // Bind parameters
             $stmt->bindParam(":name", $name);
             $stmt->bindParam(":username", $username);
             $stmt->bindParam(":email", $email);

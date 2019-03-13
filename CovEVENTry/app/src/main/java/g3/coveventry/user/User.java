@@ -7,7 +7,9 @@ import android.graphics.BitmapFactory;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Base64;
 import android.util.Log;
+import android.util.Pair;
 import android.widget.Toast;
 
 import com.facebook.Profile;
@@ -17,7 +19,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Objects;
 
+import g3.coveventry.database.CallbackDBResults;
 import g3.coveventry.database.CallbackDBSimple;
 import g3.coveventry.database.Database;
 
@@ -26,7 +31,7 @@ import g3.coveventry.database.Database;
  */
 public class User {
     // File to save the user profilePicture to
-    static final String FILE_USER_PHOTO = "userPhoto.png";
+    private static final String FILE_USER_PHOTO = "userPhoto.png";
 
     // One and only User instance
     private static User user = new User();
@@ -36,13 +41,13 @@ public class User {
     private CallbackUser callback = null;
 
     // Constant values for shared preferences data keys
-    static final String KEY_ID = "userID";
-    static final String KEY_NAME = "userName";
-    static final String KEY_USERNAME = "userUsername";
-    static final String KEY_EMAIL = "userEmail";
-    static final String KEY_FACEBOOKID = "userFacebookID";
-    static final String KEY_TWITTERID = "userTwitterID";
-    static final String KEY_VERIFIED = "userVerified";
+    private static final String KEY_ID = "userID";
+    private static final String KEY_NAME = "userName";
+    private static final String KEY_USERNAME = "userUsername";
+    private static final String KEY_EMAIL = "userEmail";
+    private static final String KEY_FACEBOOKID = "userFacebookID";
+    private static final String KEY_TWITTERID = "userTwitterID";
+    private static final String KEY_VERIFIED = "userVerified";
 
     // User data
     private long id = 0;
@@ -69,66 +74,64 @@ public class User {
         // Check if context still exists
         Context context = contextRef.get();
 
-        if (context != null) {
+        // Update shared preferences
+        SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
 
-            // Update shared preferences
-            SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
+        sharedPreferences.putLong(KEY_ID, id);
+        sharedPreferences.putString(KEY_NAME, name);
+        sharedPreferences.putString(KEY_EMAIL, email);
+        sharedPreferences.putString(KEY_FACEBOOKID, facebookID);
+        sharedPreferences.putString(KEY_TWITTERID, twitterID);
+        sharedPreferences.putString(KEY_USERNAME, username);
+        sharedPreferences.putBoolean(KEY_VERIFIED, verified);
 
-            sharedPreferences.putLong(KEY_ID, id);
-            sharedPreferences.putString(KEY_NAME, name);
-            sharedPreferences.putString(KEY_EMAIL, email);
-            sharedPreferences.putString(KEY_FACEBOOKID, facebookID);
-            sharedPreferences.putString(KEY_TWITTERID, twitterID);
-            sharedPreferences.putString(KEY_USERNAME, username);
-            sharedPreferences.putBoolean(KEY_VERIFIED, verified);
+        sharedPreferences.apply();
 
-            sharedPreferences.apply();
+        // If profile picture is set, save it into a file
+        if (profilePicture != null) {
+            // Save profilePicture to file
+            FileOutputStream fOutStream = null;
+            try {
+                fOutStream = context.openFileOutput(FILE_USER_PHOTO, Context.MODE_PRIVATE);
 
-            // If profile picture is set, save it into a file
-            if (profilePicture != null) {
-                // Save profilePicture to file
-                FileOutputStream fOutStream = null;
-                try {
-                    fOutStream = context.openFileOutput(FILE_USER_PHOTO, Context.MODE_PRIVATE);
+                profilePicture.compress(Bitmap.CompressFormat.PNG, 100, fOutStream);
 
-                    profilePicture.compress(Bitmap.CompressFormat.PNG, 100, fOutStream);
+            } catch (Exception e) {
+                e.printStackTrace();
 
-                } catch (Exception e) {
-                    e.printStackTrace();
+            } finally {
+                if (fOutStream != null) {
+                    try {
+                        fOutStream.close();
 
-                } finally {
-                    if (fOutStream != null) {
-                        try {
-                            fOutStream.close();
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
+        }
 
 
-            // If set, run callback function
-            if (callback != null)
-                callback.userDataUpdated();
+        // If set, run callback function
+        if (callback != null)
+            callback.userDataUpdated();
 
-            // Save user on database
-            Database.getInstance().saveUser(new CallbackDBSimple() {
-                @Override
-                public void connectionSuccessful() {
+        // Save user on database
+        Database.getInstance().saveUser(id, name, username, email, profilePicture, facebookID, twitterID, verified,
+                new CallbackDBResults<Pair<String, String>>() {
+                    @Override
+                    public void connectionSuccessful(Pair<String, String> results) {
+                        if (!results.first.equals(""))
+                            id = Long.valueOf(results.second);
+                    }
 
-                }
+                    @Override
+                    public void connectionFailed(String message) {
+                        Log.e("AppLog", message);
+                        Toast.makeText(context, "Error connecting to database", Toast.LENGTH_SHORT).show();
 
-                @Override
-                public void connectionFailed(String message) {
-                    Log.e("AppLog", message);
-                    Toast.makeText(context, "Error connecting to database", Toast.LENGTH_SHORT).show();
-                }
-            });
-
-        } else
-            throw new RuntimeException("Context reference not set, make sure to initialize user first.");
+                    }
+                });
     }
 
     /**
@@ -137,12 +140,12 @@ public class User {
      */
     private void checkSocialMediaAPIStatus() {
         // If has Facebook ID confirm if Facebook SDK still has a profile
-        if (user.facebookID != null && Profile.getCurrentProfile() == null)
-            user.removeFacebook();
+        if (isFacebookConnected() && Profile.getCurrentProfile() == null)
+            removeFacebook();
 
         // If has Twitter ID confirm if Twitter SDK still has a session
-        if (user.twitterID != null && TwitterCore.getInstance().getSessionManager().getActiveSession() == null)
-            user.removeTwitter();
+        if (isTwitterConnected() && TwitterCore.getInstance().getSessionManager().getActiveSession() == null)
+            removeTwitter();
     }
 
 
@@ -180,19 +183,6 @@ public class User {
             callback.userDataUpdated();
     }
 
-
-    public void setUser(long id, String name, String username, String email, Bitmap profilePicture, String facebookID, String twitterID,
-                        boolean verified) {
-        this.id = id;
-        this.name = name;
-        this.username = username;
-        this.email = email;
-        this.profilePicture = profilePicture;
-        this.facebookID = facebookID;
-        this.twitterID = twitterID;
-        this.verified = verified;
-    }
-
     /**
      * Checks if context is still valid and return the user object
      *
@@ -213,6 +203,7 @@ public class User {
      *
      * @return The user ID
      */
+    @SuppressWarnings("unused")
     public long getID() {
         return id;
     }
@@ -223,6 +214,7 @@ public class User {
      *
      * @return The user's name
      */
+    @SuppressWarnings("unused")
     public String getName() {
         return name;
     }
@@ -232,6 +224,7 @@ public class User {
      *
      * @return The user email
      */
+    @SuppressWarnings("unused")
     public String getEmail() {
         return email;
     }
@@ -242,6 +235,7 @@ public class User {
      *
      * @return The user profile picture
      */
+    @SuppressWarnings("unused")
     public Bitmap getProfilePicture() {
         return profilePicture;
     }
@@ -251,6 +245,7 @@ public class User {
      *
      * @return The user's Facebook ID
      */
+    @SuppressWarnings("unused")
     public String getFacebookID() {
         return facebookID;
     }
@@ -260,6 +255,7 @@ public class User {
      *
      * @return The user's Twitter ID
      */
+    @SuppressWarnings("unused")
     public String getTwitterID() {
         return twitterID;
     }
@@ -269,6 +265,7 @@ public class User {
      *
      * @return The user's username
      */
+    @SuppressWarnings("unused")
     public String getUsername() {
         return username;
     }
@@ -279,6 +276,7 @@ public class User {
      *
      * @return True if user has been verified, false otherwise
      */
+    @SuppressWarnings("unused")
     public boolean isVerified() {
         return verified;
     }
@@ -289,6 +287,7 @@ public class User {
      *
      * @return True if has user's Facebook data, false otherwise
      */
+    @SuppressWarnings("unused")
     public boolean isFacebookConnected() {
         return facebookID != null;
     }
@@ -299,6 +298,7 @@ public class User {
      *
      * @return True if has user's Twitter data, false otherwise
      */
+    @SuppressWarnings("unused")
     public boolean isTwitterConnected() {
         return twitterID != null;
     }
@@ -314,34 +314,70 @@ public class User {
      * @param email          Facebook email of the user
      */
     public void saveFacebook(@NonNull String id, @NonNull String name, @Nullable Bitmap profilePicture, @NonNull String email) {
-      /*  Database.getInstance().getUser(user.id, id, user.twitterID, new CallbackDBSimple() {
+
+        // Connect to database to check if user was already registered
+        Database.getInstance().getUser(this.id, id, twitterID, new CallbackDBResults<HashMap<String, String>>() {
+
             @Override
-            public void connectionSuccessful() {
+            public void connectionSuccessful(HashMap<String, String> results) {
+                if (!results.isEmpty()) {
+                    Bitmap profilePicture = null;
+
+                    // If an image was set, decompress it into a bitmap
+                    if (results.containsKey("profile_picture")) {
+                        byte[] imageBytes = Base64.decode(results.get("profile_picture"), Base64.DEFAULT);
+
+                        profilePicture = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                    }
+
+                    // Set retrieved data
+                    user.id = Long.valueOf(Objects.requireNonNull(results.get("id")));
+
+                    if (!Objects.requireNonNull(results.get("name")).equalsIgnoreCase("null"))
+                        user.name = results.get("name");
+
+                    if (!Objects.requireNonNull(results.get("username")).equalsIgnoreCase("null"))
+                        user.username = Objects.requireNonNull(results.get("username"));
+
+                    user.email = Objects.requireNonNull(results.get("email"));
+                    user.profilePicture = profilePicture;
+
+                    if (!Objects.requireNonNull(results.get("facebook_id")).equalsIgnoreCase("null"))
+                        user.facebookID = Objects.requireNonNull(results.get("facebook_id"));
+
+                    if (!Objects.requireNonNull(results.get("twitter_id")).equalsIgnoreCase("null"))
+                        user.twitterID = Objects.requireNonNull(results.get("twitter_id"));
+
+                    user.verified = (Objects.requireNonNull(results.get("verified")).equals("1"));
+                }
             }
 
             @Override
             public void connectionFailed(String message) {
-                Toast.makeText(contextRef.get(), "Couldn't connect to the database", Toast.LENGTH_SHORT).show();
             }
-        });*/
 
+            @Override
+            public void connectionFinished() {
+                // If stored Facebook id was wrong, correct it
+                if (!id.equalsIgnoreCase(user.facebookID))
+                    user.facebookID = id;
 
-        if (!id.equalsIgnoreCase(this.facebookID))
-            this.facebookID = id;
+                // Set name if wasn't retrieved
+                if (user.name == null)
+                    user.name = name;
 
-        if (this.name == null)
-            this.name = name;
+                // Set email if wasn't retrieved
+                if (user.email == null)
+                    user.email = email;
 
-        // If there is no email set add it
-        if (this.email == null)
-            this.email = email;
+                // Set profilePicture if wasn't retrieved
+                if (user.profilePicture == null)
+                    user.profilePicture = profilePicture;
 
-        // If there is no profilePicture set add it
-        if (this.profilePicture == null)
-            this.profilePicture = profilePicture;
-
-        // Save data to shared preferences, database and execute callback
-        persistData();
+                // Save data to shared preferences, database and execute callback
+                persistData();
+            }
+        });
     }
 
 
@@ -357,50 +393,78 @@ public class User {
      * @param verified       If twitter account is verified
      */
     public void saveTwitter(@NonNull String id, @NonNull String name, @NonNull String username, @Nullable Bitmap profilePicture, @NonNull String email, boolean verified) {
-       /* Database.getInstance().getUser(user.id, user.facebookID, id, new CallbackDBSimple() {
+
+        // Connect to database to check if user was already registered
+        Database.getInstance().getUser(this.id, facebookID, id, new CallbackDBResults<HashMap<String, String>>() {
+
             @Override
-            public void connectionSuccessful() {
+            public void connectionSuccessful(HashMap<String, String> results) {
+                if (!results.isEmpty()) {
+                    Bitmap profilePicture = null;
 
+                    // If an image was set, decompress it into a bitmap
+                    if (results.containsKey("profile_picture")) {
+                        byte[] imageBytes = Base64.decode(results.get("profile_picture"), Base64.DEFAULT);
 
-                Log.i("AppLog", user.name);
-                Log.i("AppLog", user.facebookID);
+                        profilePicture = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                    }
+
+                    // Set retrieved data
+
+                    if (!Objects.requireNonNull(results.get("name")).equalsIgnoreCase("null"))
+                        user.name = results.get("name");
+
+                    if (!Objects.requireNonNull(results.get("username")).equalsIgnoreCase("null"))
+                        user.username = Objects.requireNonNull(results.get("username"));
+
+                    user.email = Objects.requireNonNull(results.get("email"));
+                    user.profilePicture = profilePicture;
+
+                    if (!Objects.requireNonNull(results.get("facebook_id")).equalsIgnoreCase("null"))
+                        user.facebookID = Objects.requireNonNull(results.get("facebook_id"));
+
+                    if (!Objects.requireNonNull(results.get("twitter_id")).equalsIgnoreCase("null"))
+                        user.twitterID = Objects.requireNonNull(results.get("twitter_id"));
+
+                    user.verified = (Objects.requireNonNull(results.get("verified")).equals("1"));
+                }
             }
 
             @Override
             public void connectionFailed(String message) {
-                Toast.makeText(contextRef.get(), "Couldn't connect to the database", Toast.LENGTH_SHORT).show();
             }
-        });*/
+
+            @Override
+            public void connectionFinished() {
+                // If stored Twitter id was wrong, correct it
+                if (!id.equalsIgnoreCase(user.twitterID))
+                    user.twitterID = id;
+
+                // Set name if wasn't retrieved
+                if (user.name == null)
+                    user.name = name;
+
+                // Check verified if was false
+                if (!user.verified)
+                    user.verified = verified;
+
+                // Set username if wasn't retrieved
+                if (user.username == null)
+                    user.username = username;
+
+                // Set email if wasn't retrieved
+                if (user.email == null)
+                    user.email = email;
+
+                // Set profilePicture if wasn't retrieved
+                if (user.profilePicture == null)
+                    user.profilePicture = profilePicture;
 
 
-        if (!id.equalsIgnoreCase(this.twitterID))
-            this.twitterID = id;
-
-        if (this.name == null)
-            this.name = name;
-
-        if (!this.verified)
-            this.verified = verified;
-
-
-        // If there is no username set add it
-        if (this.username == null)
-            this.username = username;
-
-        // If there is no email set add it
-        if (this.email == null)
-            this.email = email;
-
-        // If there is no profilePicture set add it
-        if (this.profilePicture == null)
-            this.profilePicture = profilePicture;
-
-        Log.i("AppLog", user.name);
-        if (user.facebookID != null)
-            Log.i("AppLog", user.facebookID);
-
-        // Save data to shared preferences, database and execute callback
-        persistData();
+                // Save data to shared preferences, database and execute callback
+                persistData();
+            }
+        });
     }
 
 
@@ -411,41 +475,83 @@ public class User {
     public void removeFacebook() {
         // If only logged in with Facebook, remove all data, otherwise remove just the Facebook id
         if (!isTwitterConnected()) {
-            name = null;
-            email = null;
-            facebookID = null;
-            profilePicture = null;
-
             // Delete user profilePicture file
             //noinspection ResultOfMethodCallIgnored
             new File(FILE_USER_PHOTO).delete();
 
             // Remove data from shared preferences
-            Context context = contextRef.get();
-            if (context != null) {
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
+            SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(contextRef.get()).edit();
 
-                sharedPreferences.remove(KEY_NAME);
-                sharedPreferences.remove(KEY_EMAIL);
-                sharedPreferences.remove(KEY_FACEBOOKID);
+            sharedPreferences.remove(KEY_ID);
+            sharedPreferences.remove(KEY_NAME);
+            sharedPreferences.remove(KEY_USERNAME);
+            sharedPreferences.remove(KEY_EMAIL);
+            sharedPreferences.remove(KEY_FACEBOOKID);
+            sharedPreferences.remove(KEY_TWITTERID);
+            sharedPreferences.remove(KEY_VERIFIED);
 
-                sharedPreferences.apply();
-            }
+            sharedPreferences.apply();
 
-            // Execute callback if set
-            if (callback != null)
-                callback.userDataUpdated();
+            // Remove everything about the user from the database
+            Database.getInstance().removeUser(Database.ID.USER, String.valueOf(id), new CallbackDBSimple() {
+                @Override
+                public void connectionSuccessful() {
+
+                }
+
+                @Override
+                public void connectionFailed(String message) {
+                    Toast.makeText(contextRef.get(), "Error connecting to server", Toast.LENGTH_SHORT).show();
+
+                    Log.i("AppLog", message);
+                }
+
+                @Override
+                public void connectionFinished() {
+                    // Only remove data when connection finishes, whether successful or not
+                    id = 0;
+                    name = null;
+                    username = null;
+                    email = null;
+                    profilePicture = null;
+                    facebookID = null;
+                    twitterID = null;
+                    verified = false;
+                }
+            });
+
         } else {
-            facebookID = null;
-
             // Remove id from shared preferences
-            Context context = contextRef.get();
-            if (context != null)
-                PreferenceManager.getDefaultSharedPreferences(context)
-                        .edit()
-                        .remove(KEY_FACEBOOKID)
-                        .apply();
+            PreferenceManager.getDefaultSharedPreferences(contextRef.get())
+                    .edit()
+                    .remove(KEY_FACEBOOKID)
+                    .apply();
+
+            // Remove Facebook ID from the database
+            Database.getInstance().removeUser(Database.ID.FACEBOOK, facebookID, new CallbackDBSimple() {
+                @Override
+                public void connectionSuccessful() {
+
+                }
+
+                @Override
+                public void connectionFailed(String message) {
+                    Toast.makeText(contextRef.get(), "Error connecting to server", Toast.LENGTH_SHORT).show();
+
+                    Log.i("AppLog", message);
+                }
+
+                @Override
+                public void connectionFinished() {
+                    // Only remove id when connection finishes, whether successful or not
+                    facebookID = null;
+                }
+            });
         }
+
+        // Execute callback if set
+        if (callback != null)
+            callback.userDataUpdated();
     }
 
 
@@ -454,49 +560,85 @@ public class User {
      * also execute callback if set
      */
     public void removeTwitter() {
-        // If only logged in with Twitter, remove all data, otherwise remove just the Twitter id and username
+        // If only logged in with Twitter, remove all data, otherwise remove just the Twitter id
         if (!isFacebookConnected()) {
-            name = null;
-            username = null;
-            email = null;
-            twitterID = null;
-            profilePicture = null;
-
             // Delete user profilePicture file
             //noinspection ResultOfMethodCallIgnored
             new File(FILE_USER_PHOTO).delete();
 
             // Remove data from shared preferences
-            Context context = contextRef.get();
-            if (context != null) {
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
+            SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(contextRef.get()).edit();
 
-                sharedPreferences.remove(KEY_NAME);
-                sharedPreferences.remove(KEY_EMAIL);
-                sharedPreferences.remove(KEY_TWITTERID);
-                sharedPreferences.remove(KEY_USERNAME);
+            sharedPreferences.remove(KEY_ID);
+            sharedPreferences.remove(KEY_NAME);
+            sharedPreferences.remove(KEY_USERNAME);
+            sharedPreferences.remove(KEY_EMAIL);
+            sharedPreferences.remove(KEY_FACEBOOKID);
+            sharedPreferences.remove(KEY_TWITTERID);
+            sharedPreferences.remove(KEY_VERIFIED);
 
-                sharedPreferences.apply();
-            }
+            sharedPreferences.apply();
 
-            // Execute callback if set
-            if (callback != null)
-                callback.userDataUpdated();
+            // Remove everything about the user from the database
+            Database.getInstance().removeUser(Database.ID.USER, String.valueOf(id), new CallbackDBSimple() {
+                @Override
+                public void connectionSuccessful() {
+
+                }
+
+                @Override
+                public void connectionFailed(String message) {
+                    Toast.makeText(contextRef.get(), "Error connecting to server", Toast.LENGTH_SHORT).show();
+
+                    Log.i("AppLog", message);
+                }
+
+                @Override
+                public void connectionFinished() {
+                    // Only remove data when connection finishes, whether successful or not
+                    id = 0;
+                    name = null;
+                    username = null;
+                    email = null;
+                    profilePicture = null;
+                    facebookID = null;
+                    twitterID = null;
+                    verified = false;
+                }
+            });
+
         } else {
-            twitterID = null;
-            username = null;
+            // Remove id from shared preferences
+            PreferenceManager.getDefaultSharedPreferences(contextRef.get())
+                    .edit()
+                    .remove(KEY_TWITTERID)
+                    .apply();
 
-            // Remove id and username from shared preferences
-            Context context = contextRef.get();
-            if (context != null) {
-                SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context).edit();
+            // Remove Twitter ID from the database
+            Database.getInstance().removeUser(Database.ID.TWITTER, twitterID, new CallbackDBSimple() {
+                @Override
+                public void connectionSuccessful() {
 
-                sharedPreferences.remove(KEY_TWITTERID);
-                sharedPreferences.remove(KEY_USERNAME);
+                }
 
-                sharedPreferences.apply();
-            }
+                @Override
+                public void connectionFailed(String message) {
+                    Toast.makeText(contextRef.get(), "Error connecting to server", Toast.LENGTH_SHORT).show();
+
+                    Log.i("AppLog", message);
+                }
+
+                @Override
+                public void connectionFinished() {
+                    // Only remove id when connection finishes, whether successful or not
+                    twitterID = null;
+                }
+            });
         }
+
+        // Execute callback if set
+        if (callback != null)
+            callback.userDataUpdated();
     }
 
 }
