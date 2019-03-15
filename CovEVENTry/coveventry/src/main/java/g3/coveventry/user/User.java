@@ -183,6 +183,7 @@ public class User {
             callback.userDataUpdated();
     }
 
+
     /**
      * Checks if context is still valid and return the user object
      *
@@ -197,6 +198,17 @@ public class User {
 
         return user;
     }
+
+
+    /**
+     * Factory to update user profile information
+     *
+     * @return An object of the class to update the user profile
+     */
+    public static Update updateProfile() {
+        return new Update();
+    }
+
 
     /**
      * Retrieves the user id
@@ -641,4 +653,80 @@ public class User {
             callback.userDataUpdated();
     }
 
+
+    /**
+     * Class to update the user information
+     */
+    public static class Update {
+        /**
+         * Private constructor, so instantiation only through user method
+         */
+        private Update() {
+        }
+
+
+        /**
+         * Set the user's name
+         *
+         * @param name The new name to set for the user
+         * @return Object to continue updating user information
+         */
+        public Update setName(String name) {
+            if (name != null)
+                user.name = name;
+
+            return this;
+        }
+
+
+        /**
+         * Set the user's username
+         *
+         * @param username The new username to set for the user
+         * @return Object to continue updating user information
+         */
+        public Update setUsername(String username) {
+            if (username != null)
+                user.username = username;
+
+            return this;
+        }
+
+
+        /**
+         * Set the user's email
+         *
+         * @param email The new email to set for the user
+         * @return Object to continue updating user information
+         */
+        public Update setEmail(String email) {
+            if (email != null)
+                user.email = email;
+
+            return this;
+        }
+
+
+        /**
+         * Set the user's profile picture
+         *
+         * @param profilePicture The new profile picture to set for the user
+         * @return Object to continue updating user information
+         */
+        public Update setProfilePicture(Bitmap profilePicture) {
+            if (profilePicture != null)
+                user.profilePicture = profilePicture;
+
+            return this;
+        }
+
+
+        /**
+         * Save user updated information
+         */
+        public void apply() {
+            // Call user method to save changed information
+            user.persistData();
+        }
+    }
 }

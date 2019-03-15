@@ -2,8 +2,6 @@ package g3.coveventry.events;
 
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -24,11 +22,8 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
-import java.util.Objects;
 
 import g3.coveventry.R;
 import g3.coveventry.database.CallbackDBSimple;

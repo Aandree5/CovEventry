@@ -8,12 +8,9 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import g3.coveventry.user.User;
-
-import static java.nio.file.Files.exists;
 
 public class ProfileFragment extends Fragment {
     @Nullable
@@ -22,7 +19,7 @@ public class ProfileFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
         TextView n = view.findViewById(R.id.user_name);
-
+        
         n.setText(User.getCurrentUser().getName());
 
         TextView t = view.findViewById(R.id.twt_username);

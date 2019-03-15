@@ -1,10 +1,10 @@
 package g3.coveventry.events;
 
 import android.graphics.Bitmap;
-import android.net.Uri;
 
 import java.util.Date;
 
+@SuppressWarnings("WeakerAccess")
 public class Event {
     // Event properties
     public long id;
