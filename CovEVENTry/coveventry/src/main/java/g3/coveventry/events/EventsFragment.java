@@ -24,13 +24,6 @@ import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
-import com.google.gson.GsonBuilder;
-import com.twitter.sdk.android.core.TwitterCore;
-import com.twitter.sdk.android.core.internal.network.OkHttpClientHelper;
-import com.twitter.sdk.android.core.models.BindingValues;
-import com.twitter.sdk.android.core.models.BindingValuesAdapter;
-import com.twitter.sdk.android.core.models.SafeListAdapter;
-import com.twitter.sdk.android.core.models.SafeMapAdapter;
 import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.params.Geocode;
@@ -47,14 +40,13 @@ import java.util.Locale;
 import java.util.Objects;
 
 import g3.coveventry.R;
-import g3.coveventry.database.CallbackDBResults;
 import g3.coveventry.customviews.CovImageView;
+import g3.coveventry.database.CallbackDBResults;
 import g3.coveventry.database.Database;
+import g3.coveventry.socialmedia.TwitterAPI;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 import static g3.coveventry.events.FetchAddressIntentService.FAILURE_RESULT;
 import static g3.coveventry.events.FetchAddressIntentService.LOCATION_DATA_EXTRA;
@@ -81,20 +73,8 @@ public class EventsFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setAdapter(new EventsAdapter());
 
-
-        // Prepare retrofit to create an object of the TwitterAPI
-        Retrofit retrofit = new Retrofit.Builder()
-                .client(OkHttpClientHelper.getOkHttpClient(TwitterCore.getInstance().getGuestSessionProvider()))
-                .baseUrl("https://api.twitter.com/1.1/")
-                .addConverterFactory(GsonConverterFactory.create(new GsonBuilder()
-                        .registerTypeAdapterFactory(new SafeListAdapter())
-                        .registerTypeAdapterFactory(new SafeMapAdapter())
-                        .registerTypeAdapter(BindingValues.class, new BindingValuesAdapter())
-                        .create()))
-                .build();
-
         // Create object of TwitterAPI with retrofit
-        twitterApi = retrofit.create(TwitterAPI.class);
+        twitterApi = TwitterAPI.build();
 
 
         // Start service to retrieve information about user location
@@ -171,39 +151,37 @@ public class EventsFragment extends Fragment {
         call.enqueue(new Callback<Search>() {
             @Override
             public void onResponse(@NonNull Call<Search> call, @NonNull Response<Search> response) {
-                if (response.body() != null) {
-                    if (response.body().tweets.size() > 0) {
-                        List<Tweet> ts = new ArrayList<>();
+                if (response.body() != null && response.body().tweets.size() > 0) {
+                    List<Tweet> ts = new ArrayList<>();
 
-                        // Filter out tweets that user location is not coventry
-                        for (Tweet tweet : response.body().tweets) {
-                            if (tweet.user.location.toLowerCase().contains(city.toLowerCase())) {
+                    // Filter out tweets that user location is not coventry
+                    for (Tweet tweet : response.body().tweets) {
+                        if (tweet.user.location.toLowerCase().contains(city.toLowerCase())) {
 
-                                AsyncTask.execute(() -> {
-                                    try {
-                                        // Get image bitmap from URL
-                                        Bitmap image = null;
-                                        if (!tweet.entities.media.isEmpty())
-                                            image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
+                            AsyncTask.execute(() -> {
+                                try {
+                                    // Get image bitmap from URL
+                                    Bitmap image = null;
+                                    if (!tweet.entities.media.isEmpty())
+                                        image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
 
-                                        // Set simpleDateFormat for twitter createdAt property format
-                                        simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
+                                    // Set simpleDateFormat for twitter createdAt property format
+                                    simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
 
-                                        // Save date into variable to only be computed once
-                                        Date createdDate = simpleDateFormat.parse(tweet.createdAt);
+                                    // Save date into variable to only be computed once
+                                    Date createdDate = simpleDateFormat.parse(tweet.createdAt);
 
-                                        // Create event and add it to event list
-                                        events.add(new Event(tweet.id, tweet.user.id, tweet.user.name, tweet.user.screenName, tweet.text, image,
-                                                tweet.user.screenName, city, createdDate, createdDate, true));
+                                    // Create event and add it to event list
+                                    events.add(new Event(tweet.id, tweet.user.id, tweet.user.name, tweet.user.screenName, tweet.text, image,
+                                            tweet.user.screenName, city, createdDate, createdDate, true));
 
-                                    } catch (ParseException | IOException e) {
-                                        e.printStackTrace();
-                                    }
+                                } catch (ParseException | IOException e) {
+                                    e.printStackTrace();
+                                }
 
-                                    // Notify recycler view of data changed
-                                    Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(events.size() - 1);
-                                });
-                            }
+                                // Notify recycler view of data changed
+                                Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(events.size() - 1);
+                            });
                         }
                     }
                 }

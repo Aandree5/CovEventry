@@ -19,12 +19,21 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import g3.coveventry.database.CallbackDBResults;
 import g3.coveventry.database.CallbackDBSimple;
 import g3.coveventry.database.Database;
+import g3.coveventry.socialmedia.CallbackFriends;
+import g3.coveventry.socialmedia.Friend;
+import g3.coveventry.socialmedia.TwitterAPI;
+import g3.coveventry.socialmedia.TwitterFriendsModel;
+import retrofit2.Call;
+import retrofit2.Response;
 
 /**
  * Singleton class to hold user information at runtime
@@ -651,6 +660,61 @@ public class User {
         // Execute callback if set
         if (callback != null)
             callback.userDataUpdated();
+    }
+
+    /**
+     * Retrieve user friends to the given callback
+     *
+     * @param callbackFriends Callback to return the retrieved friends
+     */
+    public void getFriends(CallbackFriends callbackFriends) {
+        // Check user Twitter friends
+        if (isTwitterConnected()) {
+
+            // Create twitter request for friends data
+            Call<TwitterFriendsModel> call = TwitterAPI.build().getFriends(Long.valueOf(User.getCurrentUser().twitterID),
+                    null, null, 200, true, false);
+
+            // Callback to read retrieved data
+            call.enqueue(new retrofit2.Callback<TwitterFriendsModel>() {
+                @Override
+                public void onResponse(@NonNull Call<TwitterFriendsModel> call, @NonNull Response<TwitterFriendsModel> response) {
+                    if (response.body() != null && response.body().users.size() > 0) {
+                        ArrayList<Friend> friends = new ArrayList<>();
+
+                        // User to download picture on a background thread
+                        CompletableFuture.supplyAsync(() -> {
+                            for (com.twitter.sdk.android.core.models.User u : response.body().users) {
+                                Bitmap friendProfilePicture = null;
+
+                                if (u.profileImageUrlHttps != null) try {
+                                    friendProfilePicture = BitmapFactory.decodeStream(new URL(u.profileImageUrlHttps).openConnection().getInputStream());
+
+                                } catch (IOException e) {
+                                    e.printStackTrace();
+                                }
+
+                                friends.add(new Friend(u.idStr, u.name, u.email, u.screenName, friendProfilePicture));
+                            }
+
+                            callbackFriends.retrievedFriends(friends);
+
+                            return null;
+                        });
+
+                    } else
+                        callbackFriends.noFriendsRetrieved();
+                }
+
+                @Override
+                public void onFailure(@NonNull Call<TwitterFriendsModel> call, @NonNull Throwable t) {
+                    // On failure log error
+                    Toast.makeText(contextRef.get(), "Error retrieving friends from Twitter", Toast.LENGTH_SHORT).show();
+                    t.printStackTrace();
+                }
+            });
+        } else
+            callbackFriends.noFriendsRetrieved();
     }
 
 
