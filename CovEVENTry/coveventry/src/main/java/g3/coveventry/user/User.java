@@ -40,7 +40,7 @@ import retrofit2.Response;
  */
 public class User {
     // File to save the user profilePicture to
-    private static final String FILE_USER_PHOTO = "userPhoto.png";
+    private static final String FILE_PROFILE_PICTURE = "profilePicture.png";
 
     // One and only User instance
     private static User user = new User();
@@ -80,7 +80,6 @@ public class User {
      * Save user data to shared preferences and execute callback function if set
      */
     private void persistData() {
-        // Check if context still exists
         Context context = contextRef.get();
 
         // Update shared preferences
@@ -101,7 +100,7 @@ public class User {
             // Save profilePicture to file
             FileOutputStream fOutStream = null;
             try {
-                fOutStream = context.openFileOutput(FILE_USER_PHOTO, Context.MODE_PRIVATE);
+                fOutStream = context.openFileOutput(FILE_PROFILE_PICTURE, Context.MODE_PRIVATE);
 
                 profilePicture.compress(Bitmap.CompressFormat.PNG, 100, fOutStream);
 
@@ -180,9 +179,11 @@ public class User {
         user.username = sharedPreferences.getString(KEY_USERNAME, null);
         user.verified = sharedPreferences.getBoolean(KEY_VERIFIED, false);
 
-        if (new File(FILE_USER_PHOTO).exists()) {
-            user.profilePicture = BitmapFactory.decodeFile(FILE_USER_PHOTO);
-        }
+
+        // Check if profile picture file exists and if so, load the image
+        File file = context.getFileStreamPath(FILE_PROFILE_PICTURE);
+        if (file.exists())
+            user.profilePicture = BitmapFactory.decodeFile(file.getAbsolutePath());
 
         // Check SDKs status
         user.checkSocialMediaAPIStatus();
@@ -498,7 +499,7 @@ public class User {
         if (!isTwitterConnected()) {
             // Delete user profilePicture file
             //noinspection ResultOfMethodCallIgnored
-            new File(FILE_USER_PHOTO).delete();
+            new File(FILE_PROFILE_PICTURE).delete();
 
             // Remove data from shared preferences
             SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(contextRef.get()).edit();
@@ -585,7 +586,7 @@ public class User {
         if (!isFacebookConnected()) {
             // Delete user profilePicture file
             //noinspection ResultOfMethodCallIgnored
-            new File(FILE_USER_PHOTO).delete();
+            new File(FILE_PROFILE_PICTURE).delete();
 
             // Remove data from shared preferences
             SharedPreferences.Editor sharedPreferences = PreferenceManager.getDefaultSharedPreferences(contextRef.get()).edit();
