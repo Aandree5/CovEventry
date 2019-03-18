@@ -92,7 +92,7 @@ public class CovImageView extends FrameLayout {
      * @param url Url of the image to download
      */
     public void setImageBitmap(URL url){
-        // Start background task to download image
+        // Start img_splashscreen_background task to download image
         new DownloadImage(new WeakReference<>(this)).execute(url);
     }
 
@@ -104,7 +104,7 @@ public class CovImageView extends FrameLayout {
      * @param filePath Path to the file where to save the image
      */
     public void setImageBitmap(URL url, String filePath){
-        // Start background task to download image
+        // Start img_splashscreen_background task to download image
         new DownloadImage(new WeakReference<>(this), filePath).execute(url);
     }
 

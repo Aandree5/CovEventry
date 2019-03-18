@@ -43,7 +43,7 @@ public class FacebookLoginButton extends BaseLoginButton {
     public FacebookLoginButton(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
-        // Set Facebook specific logo, color and text
+        // Set Facebook specific img_logo, color and text
         Resources res = getResources();
         setCompoundDrawablesWithIntrinsicBounds(res.getDrawable(R.drawable.ic_logo_facebook, context.getTheme()),
                 null, null, null);

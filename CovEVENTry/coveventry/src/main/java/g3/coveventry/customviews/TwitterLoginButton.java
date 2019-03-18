@@ -39,7 +39,7 @@ public class TwitterLoginButton extends BaseLoginButton {
     public TwitterLoginButton(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
-        // Set Twitter specific logo, color and text
+        // Set Twitter specific img_logo, color and text
         Resources res = getResources();
         setCompoundDrawablesWithIntrinsicBounds(res.getDrawable(R.drawable.ic_logo_twitter, context.getTheme()),
                 null, null, null);

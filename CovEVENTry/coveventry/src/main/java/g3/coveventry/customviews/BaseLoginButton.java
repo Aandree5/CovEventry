@@ -32,7 +32,7 @@ public class BaseLoginButton extends AppCompatButton {
         // Set default text color
         setTextColor(Color.WHITE);
 
-        // Temporary background color, so text is visible
+        // Temporary img_splashscreen_background color, so text is visible
         setBackgroundColor(Color.BLACK);
 
         // Set padding

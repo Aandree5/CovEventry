@@ -146,7 +146,7 @@ public class HomeFragment extends Fragment {
 }
 
 /**
- * Class to download user social media pictures in the background
+ * Class to download user social media pictures in the img_splashscreen_background
  */
 class DownloadProfilePicture extends AsyncTask<String, Void, Bitmap> {
     private CallbackDownloadPicture callback;

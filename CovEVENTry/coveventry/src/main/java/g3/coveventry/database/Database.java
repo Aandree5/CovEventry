@@ -151,7 +151,7 @@ public class Database {
         requestInfo.put("date", simpleDateFormat.format(dateTime));
 
 
-        // Compress image on a background task, to no prevent the UI thread from building the dialog
+        // Compress image on a img_splashscreen_background task, to no prevent the UI thread from building the dialog
         AsyncTask.execute(() -> {
 
             // If an image was set, prepare it to be sent to the database
@@ -307,7 +307,7 @@ public class Database {
         if (username != null)
             requestInfo.put("username", username);
 
-        // Compress image on a background task, to no prevent the UI thread from building the dialog
+        // Compress image on a img_splashscreen_background task, to no prevent the UI thread from building the dialog
         AsyncTask.execute(() -> {
 
             // If an image was set, prepare it to be sent to the database

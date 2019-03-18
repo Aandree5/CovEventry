@@ -9,4 +9,6 @@
     <dimen name="login_btn_padding">12dp</dimen>
     <dimen name="login_btn_text_size">14sp</dimen>
     <dimen name="login_btn_radius">10dp</dimen>
+    <dimen name="splashscreen_logo_padding">20dp</dimen>
+    <dimen name="splashscreen_logo_radius">10dp</dimen>
 </resources>

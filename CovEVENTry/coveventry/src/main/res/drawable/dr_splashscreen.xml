@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/img_splashscreen_background" />
+
+    <item
+        android:drawable="@drawable/dr_splashscreen_logo"
+        android:gravity="center"
+        android:width="350dp"
+        android:height="150dp" />
+
+</layer-list>

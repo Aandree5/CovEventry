@@ -55,7 +55,7 @@ import static g3.coveventry.events.FetchAddressIntentService.RESULT_CITY_KEY;
 import static g3.coveventry.events.FetchAddressIntentService.RESULT_LAT_KEY;
 import static g3.coveventry.events.FetchAddressIntentService.RESULT_LON_KEY;
 
-//TODO: Save events on bundle for screen rotation and coming back from background
+//TODO: Save events on bundle for screen rotation and coming back from img_splashscreen_background
 public class EventsFragment extends Fragment {
     RecyclerView recyclerView;
     TwitterAPI twitterApi;

@@ -50,7 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:padding="5dp"
-        app:srcCompat="@drawable/logo"
+        app:srcCompat="@drawable/img_logo"
         tools:layout_editor_absoluteX="0dp"
         tools:layout_editor_absoluteY="481dp"
         app:layout_constraintBottom_toBottomOf="parent"/>

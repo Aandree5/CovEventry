@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:baselineAligned="false"
-        android:src="@drawable/logo"
+        android:src="@drawable/img_logo"
         android:padding="10dp"/>
 
     <g3.coveventry.customviews.FacebookLoginButton

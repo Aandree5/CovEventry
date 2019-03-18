@@ -51,6 +51,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Set theme to replace the theme to show the splash screen
+        setTheme(R.style.AppTheme_NoActionBar);
+
         // Set menu_toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -98,6 +101,14 @@ public class MainActivity extends AppCompatActivity {
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, new MapFragment())
                             .addToBackStack(null)
+                            .commit();
+                    break;
+
+
+                case R.id.nav_account:
+                    toolbar.setTitle("Profile");
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new ProfileFragment())
                             .commit();
                     break;
 

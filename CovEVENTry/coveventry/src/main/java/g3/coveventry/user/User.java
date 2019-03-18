@@ -683,7 +683,7 @@ public class User {
                     if (response.body() != null && response.body().users.size() > 0) {
                         ArrayList<Friend> friends = new ArrayList<>();
 
-                        // User to download picture on a background thread
+                        // User to download picture on a img_splashscreen_background thread
                         CompletableFuture.supplyAsync(() -> {
                             for (com.twitter.sdk.android.core.models.User u : response.body().users) {
                                 Bitmap friendProfilePicture = null;
