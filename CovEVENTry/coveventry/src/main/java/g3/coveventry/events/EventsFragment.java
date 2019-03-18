@@ -143,7 +143,7 @@ public class EventsFragment extends Fragment {
 
         // Create twitter request for tweets data
         Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR \"live set\" " +
-                        "tonight -meeting -i filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
+                        "tonight -meeting -i filter:links -filter:retweets",
                 new Geocode(lat, lon, 50, Geocode.Distance.KILOMETERS), null, null, null, 100,
                 null, null, null, true);
 
