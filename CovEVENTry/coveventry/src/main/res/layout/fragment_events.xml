@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".events.EventsFragment"
-    android:background="@drawable/img_event_background">
+    android:background="@drawable/img_event_background"
+    tools:context=".events.EventsFragment">
 
     <Button
         android:id="@+id/eventlist_list_swap"

@@ -70,8 +70,6 @@ import static g3.coveventry.events.FetchAddressIntentService.FAILURE_RESULT;
 import static g3.coveventry.events.FetchAddressIntentService.LOCATION_DATA_EXTRA;
 import static g3.coveventry.events.FetchAddressIntentService.RECEIVER;
 import static g3.coveventry.events.FetchAddressIntentService.RESULT_CITY_KEY;
-import static g3.coveventry.events.FetchAddressIntentService.RESULT_LAT_KEY;
-import static g3.coveventry.events.FetchAddressIntentService.RESULT_LON_KEY;
 
 //TODO: Save events on bundle for screen rotation and coming back from img_splashscreen_background
 public class EventsFragment extends Fragment {
@@ -85,7 +83,6 @@ public class EventsFragment extends Fragment {
     LatLngBounds.Builder markerBounds;
 
     LatLng userLocation;
-    LatLng cityLocation;
     String city;
     ArrayList<Event> events = new ArrayList<>();
 
@@ -133,15 +130,16 @@ public class EventsFragment extends Fragment {
 
             // Check whether to show the map or the list view
             if (showMap) {
+                // Show map and hide recycler view
+                recyclerView.setVisibility(View.GONE);
+                Objects.requireNonNull(mapFragment.getView()).setVisibility(View.VISIBLE);
+
                 // Set first camera position and zoom
                 // If no marker has been set, defaults to city location, because was added first
                 mapFragment.getMapAsync(googleMap ->
                         googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100))
                 );
 
-                // Show map and hide recycler view
-                recyclerView.setVisibility(View.GONE);
-                Objects.requireNonNull(mapFragment.getView()).setVisibility(View.VISIBLE);
             } else {
                 // Show recycler view and hide map
                 recyclerView.setVisibility(View.VISIBLE);
@@ -179,7 +177,7 @@ public class EventsFragment extends Fragment {
                 mapFragment.getMapAsync(googleMap -> {
                     // Add a marker for the event
                     googleMap.addMarker(new MarkerOptions()
-                            .position(event.location != null ? event.location : cityLocation)
+                            .position(event.location != null ? event.location : userLocation)
                             .title(event.hostName)
                             .snippet(event.description)
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
@@ -223,7 +221,7 @@ public class EventsFragment extends Fragment {
             mapFragment.getMapAsync(googleMap -> {
                 // Add a marker for the event
                 googleMap.addMarker(new MarkerOptions()
-                        .position(newEvent.location != null ? newEvent.location : cityLocation)
+                        .position(newEvent.location != null ? newEvent.location : userLocation)
                         .title(newEvent.hostName)
                         .snippet(newEvent.description)
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
@@ -264,7 +262,7 @@ public class EventsFragment extends Fragment {
         markerBounds = new LatLngBounds.Builder();
 
         // Set the user location inside the marker bounds
-        markerBounds.include(cityLocation);
+        markerBounds.include(userLocation);
 
         // Load events from database
         Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<ArrayList<Event>>() {
@@ -288,18 +286,18 @@ public class EventsFragment extends Fragment {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
         // Create twitter request for tweets data
-        Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
-                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
-                        "filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
-                new Geocode(cityLocation.latitude, cityLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
-                null, 100, null, null, null, true);
-
-        // TODO: TESTING
        /* Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
                         "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
-                        "filter:links -filter:retweets",
-                new Geocode(cityLocation.latitude, cityLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
+                        "filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
+                new Geocode(userLocation.latitude, userLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
                 null, 100, null, null, null, true);*/
+
+        // TODO: TESTING
+        Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
+                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
+                        "filter:links -filter:retweets",
+                new Geocode(userLocation.latitude, userLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
+                null, 100, null, null, null, true);
 
         // Callback to read retrieved data
         call.enqueue(new Callback<Search>() {
@@ -435,13 +433,9 @@ public class EventsFragment extends Fragment {
 
             // Read sent back information
             String cityName = resultData.getString(RESULT_CITY_KEY);
-            double lat = resultData.getDouble(RESULT_LAT_KEY);
-            double lon = resultData.getDouble(RESULT_LON_KEY);
 
             // Check information validity, and call function to get tweets
-            if (cityName != null && lat > -9999 && lon > -9999) {
-                // Keep the found city location
-                cityLocation = new LatLng(lat, lon);
+            if (cityName != null) {
                 city = cityName;
 
                 // Initiate map view, if is being used
@@ -449,8 +443,8 @@ public class EventsFragment extends Fragment {
                     // Set first camera position and zoom
                     mapFragment.getMapAsync(googleMap ->
                             googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
-                                    .target(cityLocation)
-                                    .zoom(12)
+                                    .target(userLocation)
+                                    .zoom(15)
                                     .build()))
                     );
 
@@ -482,7 +476,7 @@ public class EventsFragment extends Fragment {
             Tweet tweet = tweets[0];
 
             // Get location from fragment
-            LatLng loc = eventsFragmentRef.get().cityLocation;
+            LatLng loc = eventsFragmentRef.get().userLocation;
             // Get city name from fragment
             String city = eventsFragmentRef.get().city;
 

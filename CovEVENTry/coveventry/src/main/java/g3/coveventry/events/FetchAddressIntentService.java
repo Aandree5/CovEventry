@@ -26,8 +26,6 @@ public class FetchAddressIntentService extends IntentService {
     public static final int FAILURE_RESULT = 1;
     public static final String RECEIVER = "RECEIVER";
     public static final String RESULT_CITY_KEY = "RESULT_CITY_KEY";
-    public static final String RESULT_LAT_KEY = "RESULT_LAT_KEY";
-    public static final String RESULT_LON_KEY = "RESULT_LON_KEY";
     public static final String LOCATION_DATA_EXTRA = "LOCATION_DATA_EXTRA";
 
     /**
@@ -76,13 +74,13 @@ public class FetchAddressIntentService extends IntentService {
                 errorMessage = "No addresses found";
                 Log.e("AppLog", errorMessage);
             }
-            deliverResultToReceiver(FAILURE_RESULT, null, -9999, -9999);
+            deliverResultToReceiver(FAILURE_RESULT, null);
 
         } else {
             // Get the first address in the list (only one was retrieved)
             Address address = addresses.get(0);
 
-            deliverResultToReceiver(SUCCESS_RESULT, address.getLocality(), address.getLatitude(), address.getLongitude());
+            deliverResultToReceiver(SUCCESS_RESULT, address.getLocality());
         }
     }
 
@@ -91,15 +89,11 @@ public class FetchAddressIntentService extends IntentService {
      *
      * @param resultCode Code to say if was successful or failed (SUCCESS_RESULT | FAILURE_RESULT)
      * @param city       City found for the given location
-     * @param lat        Latitude for the given location
-     * @param lon        Longitude for the given location
      */
-    private void deliverResultToReceiver(int resultCode, String city, double lat, double lon) {
+    private void deliverResultToReceiver(int resultCode, String city) {
         // Put information into a bundle
         Bundle bundle = new Bundle();
         bundle.putString(RESULT_CITY_KEY, city);
-        bundle.putDouble(RESULT_LAT_KEY, lat);
-        bundle.putDouble(RESULT_LON_KEY, lon);
 
         // Send bundled information back to the calling activity
         receiver.send(resultCode, bundle);
