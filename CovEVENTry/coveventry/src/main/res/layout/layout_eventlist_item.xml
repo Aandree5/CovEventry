@@ -6,25 +6,26 @@
     android:layout_marginLeft="10dp"
     android:layout_marginTop="100dp"
     android:layout_marginRight="10dp"
-    android:background="@drawable/dr_eventlistitem_background"
+    android:background="@drawable/dr_event_background"
     android:padding="20dp">
 
     <g3.coveventry.customviews.CovImageView
         android:id="@+id/eventlistitem_image"
         android:layout_width="100dp"
         android:layout_height="100dp"
+        android:background="@drawable/dr_image_border"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:placeholder="@drawable/ic_event_placeholder"
-        app:round="true" />
+        app:round="false" />
 
     <TextView
         android:id="@+id/eventlistitem_host_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Host name"
-        android:textColor="@color/colorAccent"
+        android:textColor="@color/colorPrimaryDark"
         android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toStartOf="@id/eventlistitem_image"
@@ -36,6 +37,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Description"
+        android:textColor="@color/colorAccent"
         app:layout_constraintEnd_toStartOf="@id/eventlistitem_image"
         app:layout_constraintStart_toStartOf="@id/eventlistitem_host_name"
         app:layout_constraintTop_toBottomOf="@id/eventlistitem_host_name" />

@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".events.EventsFragment">
+    tools:context=".events.EventsFragment"
+    android:background="@drawable/img_event_background">
 
     <Button
         android:id="@+id/eventlist_list_swap"
@@ -23,7 +24,6 @@
         android:id="@+id/eventlist_map_view"
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:context=".events.MapFragment" />
+        android:layout_height="match_parent" />
 
 </FrameLayout>
