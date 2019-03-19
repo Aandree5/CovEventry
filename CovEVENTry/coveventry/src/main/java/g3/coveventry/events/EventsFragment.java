@@ -19,22 +19,40 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.twitter.sdk.android.core.models.Search;
 import com.twitter.sdk.android.core.models.Tweet;
 import com.twitter.sdk.android.core.services.params.Geocode;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.lang.ref.WeakReference;
 import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -58,7 +76,17 @@ import static g3.coveventry.events.FetchAddressIntentService.RESULT_LON_KEY;
 //TODO: Save events on bundle for screen rotation and coming back from img_splashscreen_background
 public class EventsFragment extends Fragment {
     RecyclerView recyclerView;
+    SupportMapFragment mapFragment;
+    Button buttonSwap;
+
     TwitterAPI twitterApi;
+
+    boolean showMap;
+    LatLngBounds.Builder markerBounds;
+
+    LatLng userLocation;
+    LatLng cityLocation;
+    String city;
     ArrayList<Event> events = new ArrayList<>();
 
     @Override
@@ -66,16 +94,12 @@ public class EventsFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_events, container, false);
 
-        recyclerView = view.findViewById(R.id.fe_list);
-
-        // Set recycler view properties
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(new EventsAdapter());
+        buttonSwap = view.findViewById(R.id.eventlist_list_swap);
+        recyclerView = view.findViewById(R.id.eventlist_list_view);
+        mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.eventlist_map_view);
 
         // Create object of TwitterAPI with retrofit
         twitterApi = TwitterAPI.build();
-
 
         // Start service to retrieve information about user location
         FusedLocationProviderClient locClient = LocationServices.getFusedLocationProviderClient(Objects.requireNonNull(getActivity()));
@@ -84,6 +108,8 @@ public class EventsFragment extends Fragment {
                     .addOnSuccessListener(location -> {
                         // If location was successfully retrieved, start service to find the city name
                         if (location != null) {
+                            userLocation = new LatLng(location.getLatitude(), location.getLongitude());
+
                             Intent intent = new Intent(getContext(), FetchAddressIntentService.class);
                             intent.putExtra(RECEIVER, new AddressResultReceiver());
                             intent.putExtra(LOCATION_DATA_EXTRA, location);
@@ -101,32 +127,152 @@ public class EventsFragment extends Fragment {
 
         }
 
+        // Listener to swap between map and list view
+        buttonSwap.setOnClickListener(view1 -> {
+            showMap = !showMap;
+
+            // Check whether to show the map or the list view
+            if (showMap) {
+                // Set first camera position and zoom
+                // If no marker has been set, defaults to city location, because was added first
+                mapFragment.getMapAsync(googleMap ->
+                        googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100))
+                );
+
+                // Show map and hide recycler view
+                recyclerView.setVisibility(View.GONE);
+                Objects.requireNonNull(mapFragment.getView()).setVisibility(View.VISIBLE);
+            } else {
+                // Show recycler view and hide map
+                recyclerView.setVisibility(View.VISIBLE);
+                Objects.requireNonNull(mapFragment.getView()).setVisibility(View.GONE);
+
+                // Set recycler view properties
+                recyclerView.setHasFixedSize(true);
+                recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+                recyclerView.setAdapter(new EventsAdapter());
+            }
+        });
+
+        // Check if was just open or is rebuilding from background
+        if (savedInstanceState == null) {
+            showMap = true;
+        }
 
         return view;
     }
 
 
     /**
-     * Load event for the day, from database and twitter into recycler view
+     * Notify either the recycler view or the map when a new event has been added
      *
-     * @param city City to filter the tweets user location
-     * @param lat  Latitude to query the TwitterAPI for tweets
-     * @param lon  Longitude to query the TwitterAPI for tweets
+     * @param newEvents List of new added events
      */
-    private void loadEvents(String city, double lat, double lon) {
-        // Reset events list
+    void notifyEventRangeAdded(List<Event> newEvents) {
+        // Whether to notify the map or the recycler view
+        if (showMap) {
+            // Add events, events have to be added here because of the recycler view updating only after it's ready,
+            // so the array might be changed in the meantime, so have to be added right before updating the views
+            events.addAll(newEvents);
+
+            for (Event event : newEvents)
+                mapFragment.getMapAsync(googleMap -> {
+                    // Add a marker for the event
+                    googleMap.addMarker(new MarkerOptions()
+                            .position(event.location != null ? event.location : cityLocation)
+                            .title(event.hostName)
+                            .snippet(event.description)
+                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+
+                    // If location is set, extend the markers bounds
+                    if (event.location != null)
+                        markerBounds.include(event.location);
+
+                    // Move camera to show all markers
+                    googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100));
+                });
+        } else {
+            // Notify recycler view of data changed
+            // post() will allow the recycler view to complete what it's doing before trying to update again
+            recyclerView.post(() ->
+                    {
+                        // Add events, events have to be added here because of the recycler view updating only after it's ready,
+                        // so the array might be changed in the meantime, so have to be added right before updating the views
+                        events.addAll(newEvents);
+
+                        // Notify the recycler view
+                        Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - 1 - newEvents.size(), newEvents.size());
+                    }
+            );
+        }
+    }
+
+
+    /**
+     * Notify either the recycler view or the map when a new event has been added
+     *
+     * @param newEvent Event to update the views
+     */
+    void notifyEventAdded(Event newEvent) {
+        // Whether to notify the map or the recycler view
+        if (showMap) {
+            // Add events, events have to be added here because of the recycler view updating only after it's ready,
+            // so the array might be changed in the meantime, so have to be added right before updating the views
+            events.add(newEvent);
+
+            mapFragment.getMapAsync(googleMap -> {
+                // Add a marker for the event
+                googleMap.addMarker(new MarkerOptions()
+                        .position(newEvent.location != null ? newEvent.location : cityLocation)
+                        .title(newEvent.hostName)
+                        .snippet(newEvent.description)
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+
+                // If location is set, extend the markers bounds
+                if (newEvent.location != null)
+                    markerBounds.include(newEvent.location);
+
+                // Move camera to show all markers
+                googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100));
+
+            });
+        } else {
+            // Notify recycler view of data changed
+            // post() will allow the recycler view to complete what it's doing before trying to update again
+            recyclerView.post(() ->
+                    {
+                        // Add events, events have to be added here because of the recycler view updating only after it's ready,
+                        // so the array might be changed in the meantime, so have to be added right before updating the views
+                        events.add(newEvent);
+
+                        // Notify the recycler view
+                        Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(events.size() - 1);
+                    }
+            );
+        }
+    }
+
+    /**
+     * Load event for the day, from database and twitter
+     *
+     */
+    private void loadEvents() {
+        // Reset events list and marker bounds
         events.clear();
+
+        // Initiate marker bound builder
+        markerBounds = new LatLngBounds.Builder();
+
+        // Set the user location inside the marker bounds
+        markerBounds.include(cityLocation);
 
         // Load events from database
         Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<ArrayList<Event>>() {
             @Override
             public void connectionSuccessful(ArrayList<Event> results) {
-                if (!results.isEmpty()) {
-                    events.addAll(results);
-
-                    // Notify recycler view of data changed
-                    Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - 1 - results.size(), results.size());
-                }
+                // Notify views
+                if (!results.isEmpty())
+                    notifyEventRangeAdded(results);
             }
 
             @Override
@@ -142,49 +288,29 @@ public class EventsFragment extends Fragment {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
         // Create twitter request for tweets data
-        Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR \"live set\" " +
-                        "tonight -meeting -i filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
-                new Geocode(lat, lon, 50, Geocode.Distance.KILOMETERS), null, null, null, 100,
-                null, null, null, true);
+        Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
+                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
+                        "filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
+                new Geocode(cityLocation.latitude, cityLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
+                null, 100, null, null, null, true);
+
+        // TODO: TESTING
+       /* Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
+                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
+                        "filter:links -filter:retweets",
+                new Geocode(cityLocation.latitude, cityLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
+                null, 100, null, null, null, true);*/
 
         // Callback to read retrieved data
         call.enqueue(new Callback<Search>() {
             @Override
             public void onResponse(@NonNull Call<Search> call, @NonNull Response<Search> response) {
-                if (response.body() != null && response.body().tweets.size() > 0) {
-                    List<Tweet> ts = new ArrayList<>();
-
-                    // Filter out tweets that user location is not coventry
-                    for (Tweet tweet : response.body().tweets) {
-                        if (tweet.user.location.toLowerCase().contains(city.toLowerCase())) {
-
-                            AsyncTask.execute(() -> {
-                                try {
-                                    // Get image bitmap from URL
-                                    Bitmap image = null;
-                                    if (!tweet.entities.media.isEmpty())
-                                        image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
-
-                                    // Set simpleDateFormat for twitter createdAt property format
-                                    simpleDateFormat.applyPattern("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
-
-                                    // Save date into variable to only be computed once
-                                    Date createdDate = simpleDateFormat.parse(tweet.createdAt);
-
-                                    // Create event and add it to event list
-                                    events.add(new Event(tweet.id, tweet.user.id, tweet.user.name, tweet.user.screenName, tweet.text, image,
-                                            tweet.user.screenName, city, createdDate, createdDate, true));
-
-                                } catch (ParseException | IOException e) {
-                                    e.printStackTrace();
-                                }
-
-                                // Notify recycler view of data changed
-                                Objects.requireNonNull(recyclerView.getAdapter()).notifyItemInserted(events.size() - 1);
-                            });
-                        }
-                    }
-                }
+                if (response.body() != null && response.body().tweets.size() > 0)
+                    for (Tweet tweet : response.body().tweets)
+                        // Filter out tweets that user location is not coventry
+                        // Run an AsyncTask to check events location
+                        if (tweet.user.location.toLowerCase().contains(city.toLowerCase()))
+                            new FormatEvent(EventsFragment.this).execute(tweet);
             }
 
             @Override
@@ -208,6 +334,7 @@ public class EventsFragment extends Fragment {
         final class EventsViewHolder extends RecyclerView.ViewHolder {
             private TextView hostName;
             private TextView description;
+            private TextView location;
             private CovImageView image;
 
             /**
@@ -220,6 +347,7 @@ public class EventsFragment extends Fragment {
 
                 hostName = itemView.findViewById(R.id.eventlistitem_host_name);
                 description = itemView.findViewById(R.id.eventlistitem_description);
+                location = itemView.findViewById(R.id.eventlistitem_location);
                 image = itemView.findViewById(R.id.eventlistitem_image);
             }
         }
@@ -236,7 +364,7 @@ public class EventsFragment extends Fragment {
         @Override
         public EventsViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             // Create view for event item
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_event_list_item, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.layout_eventlist_item, parent, false);
 
             return new EventsViewHolder(view);
         }
@@ -249,6 +377,13 @@ public class EventsFragment extends Fragment {
 
             viewHolder.hostName.setText(event.hostName);
             viewHolder.description.setText(event.description);
+
+            if (event.location != null)
+                viewHolder.location.setText(String.format(Locale.getDefault(), "%.4f , %.4f", event.location.latitude, event.location.longitude));
+
+            else
+                viewHolder.location.setText("Location");
+
 
             if (event.image != null)
                 viewHolder.image.setImageBitmap(event.image);
@@ -299,17 +434,144 @@ public class EventsFragment extends Fragment {
             }
 
             // Read sent back information
-            String city = resultData.getString(RESULT_CITY_KEY);
+            String cityName = resultData.getString(RESULT_CITY_KEY);
             double lat = resultData.getDouble(RESULT_LAT_KEY);
             double lon = resultData.getDouble(RESULT_LON_KEY);
 
             // Check information validity, and call function to get tweets
-            if (city != null && lat > -9999 && lon > -9999)
-                loadEvents(city, lat, lon);
+            if (cityName != null && lat > -9999 && lon > -9999) {
+                // Keep the found city location
+                cityLocation = new LatLng(lat, lon);
+                city = cityName;
 
-            else {
+                // Initiate map view, if is being used
+                if (showMap)
+                    // Set first camera position and zoom
+                    mapFragment.getMapAsync(googleMap ->
+                            googleMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
+                                    .target(cityLocation)
+                                    .zoom(12)
+                                    .build()))
+                    );
+
+                loadEvents();
+            } else {
                 Toast.makeText(getContext(), "Error retrieving location", Toast.LENGTH_SHORT).show();
             }
+        }
+    }
+
+    /**
+     * Class to format events, download images and get their location
+     */
+    private static class FormatEvent extends AsyncTask<Tweet, Void, Event> {
+        // Reference to the events fragment to retrieve needed data
+        private WeakReference<EventsFragment> eventsFragmentRef;
+
+        /**
+         * Constructor
+         *
+         * @param eventsFragment Fragment to retrieve data
+         */
+        FormatEvent(@NonNull EventsFragment eventsFragment) {
+            this.eventsFragmentRef = new WeakReference<>(eventsFragment);
+        }
+
+        @Override
+        protected Event doInBackground(Tweet... tweets) {
+            Tweet tweet = tweets[0];
+
+            // Get location from fragment
+            LatLng loc = eventsFragmentRef.get().cityLocation;
+            // Get city name from fragment
+            String city = eventsFragmentRef.get().city;
+
+            try {
+                // Get image bitmap from URL
+                Bitmap image = null;
+                if (!tweet.entities.media.isEmpty())
+                    image = BitmapFactory.decodeStream(new URL(tweet.entities.media.get(0).mediaUrlHttps).openConnection().getInputStream());
+
+                // Regex to filter out emoji form user's names
+                String regex = "[^\\p{L}\\p{N}\\p{P}\\p{Z}]";
+                String userNameNoEmoji = tweet.user.name.replaceAll(regex, "");
+
+                // Data to query Google Places API for the location of an event
+                HashMap<String, String> requestInfo = new HashMap<>();
+                requestInfo.put("key", eventsFragmentRef.get().getString(R.string.GOOGLE_API_KEY));
+                requestInfo.put("input", userNameNoEmoji);
+                requestInfo.put("inputtype", "textquery");
+                requestInfo.put("locationbias", "circle:" + 10000 + "@" + loc.latitude + "," + loc.longitude);
+                requestInfo.put("fields", "geometry/location");
+
+                // Keep event location
+                LatLng eventLocation = null;
+
+                StringBuilder data = new StringBuilder();
+
+                // Append all the information for the request into a string
+                for (String rI : requestInfo.keySet())
+                    data.append(URLEncoder.encode(rI, "UTF-8")).append("=")
+                            .append(URLEncoder.encode(requestInfo.get(rI), "UTF-8")).append("&");
+
+                // Open connection to Places API, append string to link because it's not a .php page
+                // Wasn't sending the data in time
+                URLConnection conn = new URL("https://maps.googleapis.com/maps/api/place/findplacefromtext/json?" + data.toString()).openConnection();
+                conn.setDoOutput(true);
+
+                // Receive and read data into a HashMaps
+                BufferedReader buffReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+                // Read retrieved data
+                StringBuilder resp = new StringBuilder();
+                String line;
+                while ((line = buffReader.readLine()) != null)
+                    resp.append(line);
+
+                // Check if there was a response
+                if (resp.length() > 0) {
+                    JSONObject results = new JSONObject(resp.toString());
+
+                    // Parse result into a LatLng
+                    if (results.has("candidates")) {
+                        JSONArray candidates = results.getJSONArray("candidates");
+                        if (candidates.length() > 0 && candidates.getJSONObject(0).has("geometry")) {
+                            JSONObject geometry = candidates.getJSONObject(0).getJSONObject("geometry");
+                            if (geometry.has("location")) {
+                                JSONObject location = geometry.getJSONObject("location");
+                                if (location.has("lat") && location.has("lng"))
+                                    eventLocation = new LatLng(location.getDouble("lat"), location.getDouble("lng"));
+                            }
+                        }
+                    }
+                }
+
+
+                // Set simpleDateFormat for twitter createdAt property format
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss ZZZZZ yyyy", Locale.getDefault());
+
+                // Save date into variable to only be computed once
+                Date createdDate = simpleDateFormat.parse(tweet.createdAt);
+
+                // Return formatted event
+                return new Event(tweet.id, tweet.user.id, tweet.user.name, tweet.user.screenName, tweet.text, image,
+                        tweet.user.screenName, city, createdDate, createdDate, true, eventLocation);
+
+            } catch (ParseException | IOException | JSONException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Event event) {
+            // Notify views
+            if (event != null)
+                eventsFragmentRef.get().notifyEventAdded(event);
+
+            else
+                Log.e("AppLog", "Error formatting event!");
         }
     }
 }

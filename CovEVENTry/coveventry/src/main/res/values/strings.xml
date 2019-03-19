@@ -3,12 +3,13 @@
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="FACEBOOK_API_ID">2202969129954888</string>
-    <string name="FB_LOGIN_PROTOCOL_SCHEME">fb2202969129954888</string>
+    <string name="FACEBOOK_API_ID" translatable="false">2202969129954888</string>
+    <string name="FB_LOGIN_PROTOCOL_SCHEME" translatable="false">fb2202969129954888</string>
     <string name="login_facebook">Connect to facebook</string>
-    <string name="TWITTER_KEY">48fK8hJl7AUXtJN40gRZiKo4y</string>
-    <string name="TWITTER_SECRET">SBASViARF5reStSygto8Q7BcDuvQCFeep3M5bGXMOK3H0u3Yr0</string>
+    <string name="TWITTER_KEY" translatable="false">48fK8hJl7AUXtJN40gRZiKo4y</string>
+    <string name="TWITTER_SECRET" translatable="false">SBASViARF5reStSygto8Q7BcDuvQCFeep3M5bGXMOK3H0u3Yr0</string>
     <string name="login_twitter">Connect to Twitter</string>
+    <string name="GOOGLE_API_KEY" translatable="false">AIzaSyDcDQ9sfcaCTjy2WoRuiIsTT6e2VWwZ-4M</string>
 
     <string name="logout">Log out</string>
     <string name="login_successful">Login successful</string>

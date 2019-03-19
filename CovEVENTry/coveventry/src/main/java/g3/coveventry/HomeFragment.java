@@ -143,41 +143,42 @@ public class HomeFragment extends Fragment {
 
         super.onActivityResult(requestCode, resultCode, data);
     }
-}
 
-/**
- * Class to download user social media pictures in the img_splashscreen_background
- */
-class DownloadProfilePicture extends AsyncTask<String, Void, Bitmap> {
-    private CallbackDownloadPicture callback;
+    /**
+     * Class to download user social media pictures in the img_splashscreen_background
+     */
+    private static class DownloadProfilePicture extends AsyncTask<String, Void, Bitmap> {
+        private CallbackDownloadPicture callback;
 
-    // Set callback with code to run after getting the image
-    DownloadProfilePicture(CallbackDownloadPicture callback) {
-        this.callback = callback;
-    }
-
-
-    @Override
-    protected Bitmap doInBackground(String... urls) {
-        Bitmap profilePicture = null;
-        try {
-            // Download image from url
-            profilePicture = BitmapFactory.decodeStream(new URL(urls[0]).openConnection().getInputStream());
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        // Set callback with code to run after getting the image
+        DownloadProfilePicture(CallbackDownloadPicture callback) {
+            this.callback = callback;
         }
 
-        return profilePicture;
+
+        @Override
+        protected Bitmap doInBackground(String... urls) {
+            Bitmap profilePicture = null;
+            try {
+                // Download image from url
+                profilePicture = BitmapFactory.decodeStream(new URL(urls[0]).openConnection().getInputStream());
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return profilePicture;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+
+            // After image downloaded call method to run code
+            // bitmap will be null if there was no image to download
+            callback.pictureDownloaded(bitmap);
+        }
     }
 
-    @Override
-    protected void onPostExecute(Bitmap bitmap) {
-        super.onPostExecute(bitmap);
-
-        // After image downloaded call method to run code
-        // bitmap will be null if there was no image to download
-        callback.pictureDownloaded(bitmap);
-    }
 }

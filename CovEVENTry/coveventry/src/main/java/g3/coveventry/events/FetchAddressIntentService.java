@@ -82,7 +82,7 @@ public class FetchAddressIntentService extends IntentService {
             // Get the first address in the list (only one was retrieved)
             Address address = addresses.get(0);
 
-            deliverResultToReceiver(SUCCESS_RESULT, address.getLocality(), location.getLatitude(), location.getLongitude());
+            deliverResultToReceiver(SUCCESS_RESULT, address.getLocality(), address.getLatitude(), address.getLongitude());
         }
     }
 

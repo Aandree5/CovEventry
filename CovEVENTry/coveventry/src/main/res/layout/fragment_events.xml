@@ -5,9 +5,25 @@
     android:layout_height="match_parent"
     tools:context=".events.EventsFragment">
 
+    <Button
+        android:id="@+id/eventlist_list_swap"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/dr_eventslist_swap"
+        android:layout_gravity="top|center_horizontal" />
+
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/fe_list"
+        android:id="@+id/eventlist_list_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/eventlist_map_view"
+        android:name="com.google.android.gms.maps.SupportMapFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".events.MapFragment" />
 
 </FrameLayout>

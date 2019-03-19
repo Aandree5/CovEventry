@@ -245,7 +245,7 @@ public class Database {
                                 jsonEvent.getString("title"), jsonEvent.getString("description"), image,
                                 jsonEvent.getString("venue"), jsonEvent.getString("post_code"),
                                 simpleDateFormat.parse(jsonEvent.getString("date")),
-                                simpleDateFormat.parse(jsonEvent.getString("created"))));
+                                simpleDateFormat.parse(jsonEvent.getString("created")), false, null));
 
                     } catch (ParseException | JSONException e) {
                         e.printStackTrace();
@@ -489,138 +489,138 @@ public class Database {
         }).execute();
     }
 
-}
-
-/**
- * Class to actually perform database operations
- */
-class connectMySQL extends AsyncTask<Void, Void, JSONArray> {
-    // Callback to update on task progress
-    private CallbackMySQLConnection callback;
-    // File URL to connect to
-    private String fileURL;
-    // HashMap of information to send to the database
-    private HashMap<String, String> requestInfo;
-    // Store message if error occurred, predefined as just error to prevent crashes
-    private String errorMessage = "Error";
 
     /**
-     * Constructor to prepare the connection object
-     *
-     * @param fileURL     URL of file to connect to
-     * @param requestInfo HashMap of information to send to database
-     * @param callback    Interface to call methods according to progression
+     * Class to actually perform database operations
      */
-    connectMySQL(@NonNull String fileURL, @NonNull HashMap<String, String> requestInfo, @NonNull CallbackMySQLConnection callback) {
-        this.fileURL = fileURL;
-        this.requestInfo = requestInfo;
-        this.callback = callback;
-    }
+    private static class connectMySQL extends AsyncTask<Void, Void, JSONArray> {
+        // Callback to update on task progress
+        private CallbackMySQLConnection callback;
+        // File URL to connect to
+        private String fileURL;
+        // HashMap of information to send to the database
+        private HashMap<String, String> requestInfo;
+        // Store message if error occurred, predefined as just error to prevent crashes
+        private String errorMessage = "Error";
 
-    @Override
-    protected void onPreExecute() {
-        super.onPreExecute();
-
-        callback.connectionStarted();
-    }
-
-    @Override
-    protected JSONArray doInBackground(Void... voids) {
-        JSONArray results = new JSONArray();
-
-        try {
-            StringBuilder data = new StringBuilder();
-
-            // Append all the information for the request into a string
-            for (String rI : requestInfo.keySet())
-                data.append(URLEncoder.encode(rI, "UTF-8")).append("=")
-                        .append(URLEncoder.encode(requestInfo.get(rI), "UTF-8")).append("&");
-
-            // Open connection to webservices
-            URLConnection conn = new URL(fileURL).openConnection();
-            conn.setDoOutput(true);
-
-            // Send data through connection
-            OutputStreamWriter outStreamWriter = new OutputStreamWriter(conn.getOutputStream());
-            outStreamWriter.write(data.toString());
-            outStreamWriter.flush();
-
-            outStreamWriter.close();
-
-            // Receive and read data into a HashMaps
-            BufferedReader buffReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = buffReader.readLine()) != null)
-                response.append(line);
-
-            // Check if there was a response
-            if (response.length() > 0) {
-                // If starts with '[' means that it's an array
-                if (response.charAt(0) == '[') {
-                    results = new JSONArray(response.toString());
-                }
-                // If starts with '{' means that it's an object
-                else if (response.charAt(0) == '{') {
-                    results.put(new JSONObject(response.toString()));
-                }
-                // Otherwise it was an error
-                else {
-                    errorMessage = response.toString();
-                }
-            }
-
-        } catch (JSONException | IOException e) {
-            Log.e("connectMySQL", e.getMessage());
+        /**
+         * Constructor to prepare the connection object
+         *
+         * @param fileURL     URL of file to connect to
+         * @param requestInfo HashMap of information to send to database
+         * @param callback    Interface to call methods according to progression
+         */
+        connectMySQL(@NonNull String fileURL, @NonNull HashMap<String, String> requestInfo, @NonNull CallbackMySQLConnection callback) {
+            this.fileURL = fileURL;
+            this.requestInfo = requestInfo;
+            this.callback = callback;
         }
 
-        return results;
-    }
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
 
-    @Override
-    protected void onPostExecute(JSONArray results) {
-        super.onPostExecute(results);
+            callback.connectionStarted();
+        }
 
-        // Dismiss progress dialog
-        Database.getInstance().stopDialog();
+        @Override
+        protected JSONArray doInBackground(Void... voids) {
+            JSONArray results = new JSONArray();
 
-        // If items were returned it was a success, otherwise send error message
-        if (results.length() > 0 || errorMessage.equalsIgnoreCase("null"))
-            callback.connectionSuccessful(results);
+            try {
+                StringBuilder data = new StringBuilder();
 
-        else
-            callback.connectionFailed(errorMessage);
+                // Append all the information for the request into a string
+                for (String rI : requestInfo.keySet())
+                    data.append(URLEncoder.encode(rI, "UTF-8")).append("=")
+                            .append(URLEncoder.encode(requestInfo.get(rI), "UTF-8")).append("&");
 
-        // Call finished method, independent of successful or not
-        callback.connectionFinished();
-    }
+                // Open connection to webservices
+                URLConnection conn = new URL(fileURL).openConnection();
+                conn.setDoOutput(true);
 
-    @Override
-    protected void onCancelled() {
-        super.onCancelled();
+                // Send data through connection
+                OutputStreamWriter outStreamWriter = new OutputStreamWriter(conn.getOutputStream());
+                outStreamWriter.write(data.toString());
+                outStreamWriter.flush();
 
-        // If items were returned it was a success, otherwise send error message
-        Database.getInstance().stopDialog();
+                outStreamWriter.close();
 
-        // Call failed connection with error as canceled
-        callback.connectionFailed("Background task canceled");
+                // Receive and read data into a HashMaps
+                BufferedReader buffReader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-        // Call finished method, independent of successful or not
-        callback.connectionFinished();
-    }
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = buffReader.readLine()) != null)
+                    response.append(line);
+
+                // Check if there was a response
+                if (response.length() > 0) {
+                    // If starts with '[' means that it's an array
+                    if (response.charAt(0) == '[') {
+                        results = new JSONArray(response.toString());
+                    }
+                    // If starts with '{' means that it's an object
+                    else if (response.charAt(0) == '{') {
+                        results.put(new JSONObject(response.toString()));
+                    }
+                    // Otherwise it was an error
+                    else {
+                        errorMessage = response.toString();
+                    }
+                }
+
+            } catch (JSONException | IOException e) {
+                Log.e("connectMySQL", e.getMessage());
+            }
+
+            return results;
+        }
+
+        @Override
+        protected void onPostExecute(JSONArray results) {
+            super.onPostExecute(results);
+
+            // Dismiss progress dialog
+            Database.getInstance().stopDialog();
+
+            // If items were returned it was a success, otherwise send error message
+            if (results.length() > 0 || errorMessage.equalsIgnoreCase("null"))
+                callback.connectionSuccessful(results);
+
+            else
+                callback.connectionFailed(errorMessage);
+
+            // Call finished method, independent of successful or not
+            callback.connectionFinished();
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+
+            // If items were returned it was a success, otherwise send error message
+            Database.getInstance().stopDialog();
+
+            // Call failed connection with error as canceled
+            callback.connectionFailed("Background task canceled");
+
+            // Call finished method, independent of successful or not
+            callback.connectionFinished();
+        }
 
 
-    /**
-     * Interface to return JSONArray to be handled after and passed to the needed callback
-     * Used only by this two classes to read and process retrieved information
-     */
-    interface CallbackMySQLConnection extends CallbackDatabase {
         /**
-         * Called on successful connection, with a jsonArray from the connection
-         *
-         * @param jsonArray Array with the data retrieved from the database
+         * Interface to return JSONArray to be handled after and passed to the needed callback
+         * Used only by this two classes to read and process retrieved information
          */
-        void connectionSuccessful(JSONArray jsonArray);
+        interface CallbackMySQLConnection extends CallbackDatabase {
+            /**
+             * Called on successful connection, with a jsonArray from the connection
+             *
+             * @param jsonArray Array with the data retrieved from the database
+             */
+            void connectionSuccessful(JSONArray jsonArray);
+        }
     }
 }
