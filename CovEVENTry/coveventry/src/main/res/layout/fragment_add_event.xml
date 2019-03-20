@@ -8,7 +8,9 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginBottom="50dp"
         android:background="@color/com_facebook_button_background_color_focused"
+        android:paddingBottom="10dp"
         tools:context=".events.AddEventFragment">
 
         <TextView
@@ -81,7 +83,7 @@
             android:layout_marginEnd="8dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textInputLayout3">
+            app:layout_constraintTop_toBottomOf="@+id/textInputLayout7">
 
             <android.support.design.widget.TextInputEditText
                 android:id="@+id/EventDescription"
@@ -162,6 +164,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Event Name ..." />
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:id="@+id/textInputLayout7"
+            android:layout_width="365dp"
+            android:layout_height="54dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textInputLayout3">
+
+            <android.support.design.widget.TextInputEditText
+                android:id="@+id/EventTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Event Time (HHMM)"
+                android:inputType="time" />
         </android.support.design.widget.TextInputLayout>
 
     </android.support.constraint.ConstraintLayout>
