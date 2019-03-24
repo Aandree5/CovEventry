@@ -242,18 +242,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        // Items action
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -264,6 +252,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId())
+        {
+            case R.id.bottom_nav_messages:
+                Toast.makeText(getApplicationContext(), "Opened Messages", Toast.LENGTH_SHORT).show();
+                break;
+
+            case R.id.bottom_nav_notifications:
+                Toast.makeText(getApplicationContext(), "Opened Notifications", Toast.LENGTH_SHORT).show();
+                break;
+        }
+
+        return true;
+    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
