@@ -28,6 +28,7 @@ import java.util.Locale;
 import g3.coveventry.R;
 import g3.coveventry.database.CallbackDBSimple;
 import g3.coveventry.database.Database;
+import g3.coveventry.user.User;
 
 
 /**
@@ -37,7 +38,7 @@ public class AddEventFragment extends Fragment {
 
     ImageView imageView;
     Button ImageBtn, CancelBtn, SaveBtn;
-    EditText EventName, EventVenue, EventPostCode, EventDate, EventDescription;
+    EditText EventName, EventVenue, EventPostCode, EventDate, EventTime, EventDescription;
     private static final int PICK_IMAGE = 100;
     Uri imageUri;
 
@@ -62,7 +63,9 @@ public class AddEventFragment extends Fragment {
         EventVenue = view.findViewById(R.id.EventVenue);
         EventPostCode = view.findViewById(R.id.EventPostCode);
         EventDate = view.findViewById(R.id.EventDate);
+        EventTime = view.findViewById(R.id.EventTime);
         EventDescription = view.findViewById(R.id.EventDescription);
+
 
         //Pull image from local gallery
         ImageBtn.setOnClickListener(v -> openGallery());
@@ -73,6 +76,7 @@ public class AddEventFragment extends Fragment {
             EventVenue.setText("");
             EventPostCode.setText("");
             EventDate.setText("");
+            EventTime.setText("");
             EventDescription.setText("");
             imageView.setImageResource(0);
         });
@@ -82,47 +86,51 @@ public class AddEventFragment extends Fragment {
             @Override
             public void onClick(View v)
             {
-                long id = 1;
-                String name = EventName.getText().toString();
-                String description = EventDescription.getText().toString();
-                Bitmap image = null;
-                try {
-                    image = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), imageUri);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-                String venue = EventVenue.getText().toString();
-                String postcode = EventPostCode.getText().toString();
-                SimpleDateFormat simpleDate = new SimpleDateFormat( "ddMMyy", Locale.getDefault());
-                Date date = null;
-                try
-                {
-                    date = simpleDate.parse(EventDate.getText().toString());
-                }
-                catch (ParseException e)
-                {
-                    e.printStackTrace();
-                }
-                Database.getInstance().addEvent(id, name, description, image, venue, postcode, date, new CallbackDBSimple() {
-                    @Override
-                    public void connectionSuccessful() {
-                        Log.i("yes", "yes");
-                        Toast.makeText(getContext(),"Your Event have been saved",
-                                Toast.LENGTH_LONG).show();
-                        EventName.setText("");
-                        EventVenue.setText("");
-                        EventPostCode.setText("");
-                        EventDate.setText("");
-                        EventDescription.setText("");
-                        imageView.setImageResource(0);
+                if(User.getCurrentUser().isFacebookConnected() || User.getCurrentUser().isTwitterConnected()) {
+                    long id = 1;
+                    String name = EventName.getText().toString();
+                    String description = EventDescription.getText().toString();
+                    Bitmap image = null;
+                    try {
+                        image = MediaStore.Images.Media.getBitmap(getContext().getContentResolver(), imageUri);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
 
-                    @Override
-                    public void connectionFailed(String message) {
-                        Log.i("no", "no");
+                    String venue = EventVenue.getText().toString();
+                    String postcode = EventPostCode.getText().toString();
+                    SimpleDateFormat simpleDate = new SimpleDateFormat("ddMMyy", Locale.getDefault());
+                    Date date = null;
+                    try {
+                        date = simpleDate.parse(EventDate.getText().toString());
+                    } catch (ParseException e) {
+                        e.printStackTrace();
                     }
-                });
+                    Database.getInstance().addEvent(id, name, description, image, venue, postcode, date, new CallbackDBSimple() {
+                        @Override
+                        public void connectionSuccessful() {
+                            Log.i("yes", "yes");
+                            Toast.makeText(getContext(), "Your Event have been saved",
+                                    Toast.LENGTH_LONG).show();
+                            EventName.setText("");
+                            EventVenue.setText("");
+                            EventPostCode.setText("");
+                            EventDate.setText("");
+                            EventTime.setText("");
+                            EventDescription.setText("");
+                            imageView.setImageResource(0);
+                        }
+
+                        @Override
+                        public void connectionFailed(String message) {
+                            Log.i("no", "no");
+                        }
+                    });
+                }
+                else{
+                    Toast.makeText(getContext(), "You must be logged in to make an event",
+                            Toast.LENGTH_LONG).show();
+                }
             }
         });
     }
