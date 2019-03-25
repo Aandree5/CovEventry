@@ -252,7 +252,6 @@ public class EventsFragment extends Fragment {
 
     /**
      * Load event for the day, from database and twitter
-     *
      */
     private void loadEvents() {
         // Reset events list and marker bounds
@@ -304,11 +303,15 @@ public class EventsFragment extends Fragment {
             @Override
             public void onResponse(@NonNull Call<Search> call, @NonNull Response<Search> response) {
                 if (response.body() != null && response.body().tweets.size() > 0)
-                    for (Tweet tweet : response.body().tweets)
+                    for (Tweet tweet : response.body().tweets) {
                         // Filter out tweets that user location is not coventry
                         // Run an AsyncTask to check events location
                         if (tweet.user.location.toLowerCase().contains(city.toLowerCase()))
-                            new FormatEvent(EventsFragment.this).execute(tweet);
+                            new FormatEvent(EventsFragment.this, userLocation).execute(tweet);
+
+                    }
+
+
             }
 
             @Override
@@ -461,14 +464,16 @@ public class EventsFragment extends Fragment {
     private static class FormatEvent extends AsyncTask<Tweet, Void, Event> {
         // Reference to the events fragment to retrieve needed data
         private WeakReference<EventsFragment> eventsFragmentRef;
+        private LatLng userLocation;
 
         /**
          * Constructor
          *
          * @param eventsFragment Fragment to retrieve data
          */
-        FormatEvent(@NonNull EventsFragment eventsFragment) {
+        FormatEvent(@NonNull EventsFragment eventsFragment, LatLng userLocation) {
             this.eventsFragmentRef = new WeakReference<>(eventsFragment);
+            this.userLocation = userLocation;
         }
 
         @Override
@@ -495,7 +500,7 @@ public class EventsFragment extends Fragment {
                 requestInfo.put("key", eventsFragmentRef.get().getString(R.string.GOOGLE_API_KEY));
                 requestInfo.put("input", userNameNoEmoji);
                 requestInfo.put("inputtype", "textquery");
-                requestInfo.put("locationbias", "circle:" + 10000 + "@" + loc.latitude + "," + loc.longitude);
+                requestInfo.put("locationbias", "circle:" + 5000 + "@" + loc.latitude + "," + loc.longitude);
                 requestInfo.put("fields", "geometry/location");
 
                 // Keep event location
@@ -533,8 +538,24 @@ public class EventsFragment extends Fragment {
                             JSONObject geometry = candidates.getJSONObject(0).getJSONObject("geometry");
                             if (geometry.has("location")) {
                                 JSONObject location = geometry.getJSONObject("location");
-                                if (location.has("lat") && location.has("lng"))
-                                    eventLocation = new LatLng(location.getDouble("lat"), location.getDouble("lng"));
+                                if (location.has("lat") && location.has("lng")) {
+                                    LatLng l = new LatLng(location.getDouble("lat"), location.getDouble("lng"));
+
+                                    // Calculate the distance from the found location and the user location,
+                                    // only use it if is near, because if not it found the wrong place
+                                    double earthRadius = 3958.75;
+                                    double latDistance = Math.toRadians(l.latitude - userLocation.latitude);
+                                    double lonDistance = Math.toRadians(l.longitude - userLocation.longitude);
+                                    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2) +
+                                            Math.cos(Math.toRadians(userLocation.latitude)) * Math.cos(Math.toRadians(l.latitude)) *
+                                                    Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+                                    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+                                    double distance = earthRadius * c;
+
+                                    // Check if within a 5km radius
+                                    if (distance < 5)
+                                        eventLocation = new LatLng(location.getDouble("lat"), location.getDouble("lng"));
+                                }
                             }
                         }
                     }
