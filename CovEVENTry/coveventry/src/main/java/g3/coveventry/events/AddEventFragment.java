@@ -99,10 +99,10 @@ public class AddEventFragment extends Fragment {
 
                     String venue = EventVenue.getText().toString();
                     String postcode = EventPostCode.getText().toString();
-                    SimpleDateFormat simpleDate = new SimpleDateFormat("ddMMyy", Locale.getDefault());
+                    SimpleDateFormat simpleDate = new SimpleDateFormat("ddMMyyHHmm", Locale.getDefault());
                     Date date = null;
                     try {
-                        date = simpleDate.parse(EventDate.getText().toString());
+                        date = simpleDate.parse(EventDate.getText().toString() + EventTime.getText().toString());
                     } catch (ParseException e) {
                         e.printStackTrace();
                     }

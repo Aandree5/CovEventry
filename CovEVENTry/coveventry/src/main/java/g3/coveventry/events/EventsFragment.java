@@ -20,6 +20,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -75,7 +76,8 @@ import static g3.coveventry.events.FetchAddressIntentService.RESULT_CITY_KEY;
 public class EventsFragment extends Fragment {
     RecyclerView recyclerView;
     SupportMapFragment mapFragment;
-    Button buttonSwap;
+    EditText SearchText;
+    Button buttonSwap, Search;
 
     TwitterAPI twitterApi;
 
@@ -92,6 +94,9 @@ public class EventsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_events, container, false);
 
         buttonSwap = view.findViewById(R.id.eventlist_list_swap);
+        Search = view.findViewById(R.id.Search);
+        SearchText = view.findViewById(R.id.SearchText);
+
         recyclerView = view.findViewById(R.id.eventlist_list_view);
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.eventlist_map_view);
 
@@ -123,6 +128,20 @@ public class EventsFragment extends Fragment {
                     });
 
         }
+
+        Search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String inp = SearchText.getText().toString();
+                if(inp == "")
+                {
+                   loadEvents();
+                }
+                else{
+                    loadSearchEvents();
+                }
+            }
+        });
 
         // Listener to swap between map and list view
         buttonSwap.setOnClickListener(view1 -> {
@@ -322,6 +341,88 @@ public class EventsFragment extends Fragment {
             }
         });
     }
+
+
+    private void loadSearchEvents() {
+        // Reset events list and marker bounds
+        events.clear();
+
+        // Initiate marker bound builder
+        markerBounds = new LatLngBounds.Builder();
+
+        // Set the user location inside the marker bounds
+        markerBounds.include(userLocation);
+
+        // Load events from database
+        Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<ArrayList<Event>>() {
+            @Override
+            public void connectionSuccessful(ArrayList<Event> results) {
+                // Notify views
+                for (int i = 0; i < results.size(); i++) {
+                    String resultName = results.get(i).title;
+                    String inpsearch = SearchText.getText().toString();
+                    boolean isFound = resultName.contains(inpsearch);
+                    // Notify views
+                    if (isFound == true) {
+                        //results.remove(i);
+                    }
+                }
+                // Notify views
+                if (!results.isEmpty())
+                    notifyEventRangeAdded(results);
+            }
+
+            @Override
+            public void connectionFailed(String message) {
+                Log.e("AppLog", message);
+                Toast.makeText(getContext(), "Error retrieving from database", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
+        // Load events from twitter
+        // Set date formatting for twitter API
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+
+        // Create twitter request for tweets data
+       /* Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
+                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
+                        "filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
+                new Geocode(userLocation.latitude, userLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
+                null, 100, null, null, null, true);*/
+
+        // TODO: TESTING
+        Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
+                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
+                        "filter:links -filter:retweets",
+                new Geocode(userLocation.latitude, userLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
+                null, 100, null, null, null, true);
+
+        // Callback to read retrieved data
+        call.enqueue(new Callback<Search>() {
+            @Override
+            public void onResponse(@NonNull Call<Search> call, @NonNull Response<Search> response) {
+                if (response.body() != null && response.body().tweets.size() > 0)
+                    for (Tweet tweet : response.body().tweets) {
+                        // Filter out tweets that user location is not coventry
+                        // Run an AsyncTask to check events location
+                        if (tweet.user.location.toLowerCase().contains(city.toLowerCase()))
+                            new FormatEvent(EventsFragment.this, userLocation).execute(tweet);
+
+                    }
+
+
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<Search> call, @NonNull Throwable t) {
+                // On failure log error
+                Toast.makeText(getContext(), "Error retrieving from Twitter", Toast.LENGTH_SHORT).show();
+                t.printStackTrace();
+            }
+        });
+    }
+
 
 
     /**

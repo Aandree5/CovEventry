@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginLeft="10dp"
-    android:layout_marginTop="100dp"
+    android:layout_marginTop="10dp"
     android:layout_marginRight="10dp"
-    android:background="@drawable/dr_event_background"
-    android:padding="20dp">
+    android:background="@drawable/dr_event_background">
 
     <g3.coveventry.customviews.CovImageView
         android:id="@+id/eventlistitem_image"
@@ -23,7 +23,7 @@
     <TextView
         android:id="@+id/eventlistitem_host_name"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:layout_height="23dp"
         android:text="Host name"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="16sp"
