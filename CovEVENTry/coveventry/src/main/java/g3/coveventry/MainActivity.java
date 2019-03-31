@@ -7,7 +7,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -36,7 +35,7 @@ import g3.coveventry.customviews.CovImageView;
 import g3.coveventry.database.Database;
 import g3.coveventry.events.AddEventFragment;
 import g3.coveventry.events.EventsFragment;
-import g3.coveventry.events.MapFragment;
+import g3.coveventry.user.ProfileFragment;
 import g3.coveventry.user.User;
 
 
@@ -45,7 +44,6 @@ public class MainActivity extends AppCompatActivity {
     public static final int PERMISSION_REQUEST_ACCESS_FINE_LOCATION = 100;
 
     NavigationView navigationView;
-    BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,14 +99,6 @@ public class MainActivity extends AppCompatActivity {
                             .commit();
                     break;
 
-                case R.id.nav_map:
-                    toolbar.setTitle("Maps");
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, new MapFragment())
-                            .addToBackStack(null)
-                            .commit();
-                    break;
-
 
                 case R.id.nav_account:
                     toolbar.setTitle("Profile");
@@ -125,23 +115,6 @@ public class MainActivity extends AppCompatActivity {
 
             // Close drawer after choosing an option
             drawer.closeDrawer(GravityCompat.START);
-
-            return true;
-        });
-
-        bottomNavigationView = findViewById(R.id.bottom_nav_view);
-        bottomNavigationView.setOnNavigationItemSelectedListener(menuItem -> {
-
-            switch (menuItem.getItemId()) {
-                case R.id.bottom_nav_messages:
-                    break;
-
-                case R.id.bottom_nav_create_event:
-                    break;
-
-                case R.id.bottom_nav_notifications:
-                    break;
-            }
 
             return true;
         });

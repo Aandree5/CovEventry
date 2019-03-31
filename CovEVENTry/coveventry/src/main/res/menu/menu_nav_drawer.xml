@@ -17,10 +17,6 @@
             android:icon="@drawable/ic_add_event"
             android:title="AddEvent" />
         <item
-            android:id="@+id/nav_map"
-            android:icon="@drawable/ic_map"
-            android:title="Map View" />
-        <item
             android:id="@+id/nav_account"
             android:icon="@drawable/ic_account"
             android:title="Account" />
@@ -28,10 +24,6 @@
             android:id="@+id/nav_friends"
             android:icon="@drawable/ic_friends"
             android:title="Friends" />
-        <item
-            android:id="@+id/nav_about"
-            android:icon="@drawable/ic_about"
-            android:title="About" />
     </group>
 
     <item android:title="">
@@ -41,10 +33,9 @@
                 android:icon="@drawable/ic_settings"
                 android:title="Settings" />
             <item
-                android:id="@+id/nav_help"
-                android:icon="@drawable/ic_help"
-                android:title="Help"
-                />
+                android:id="@+id/nav_about"
+                android:icon="@drawable/ic_about"
+                android:title="About" />
         </menu>
     </item>
 

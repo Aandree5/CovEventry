@@ -1,4 +1,4 @@
-package g3.coveventry;
+package g3.coveventry.user;
 
 
 import android.os.Bundle;
@@ -10,7 +10,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import g3.coveventry.user.User;
+import g3.coveventry.R;
+import g3.coveventry.customviews.CovImageView;
 
 public class ProfileFragment extends Fragment {
     @Nullable
@@ -33,10 +34,9 @@ public class ProfileFragment extends Fragment {
 
         e.setText(User.getCurrentUser().getName());
 
- //       ImageView i = view.findViewById(R.id.profile_photo);
+        CovImageView i = view.findViewById(R.id.profile_photo);
 
-//        i.setImageResource(User.getCurrentUser().getPhoto());
-        //Andre how do I get user profile picture?
+        i.setImageBitmap(User.getCurrentUser().getProfilePicture());
 
         return view;
     }

@@ -36,18 +36,6 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <android.support.design.widget.BottomNavigationView
-            android:id="@+id/bottom_nav_view"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom"
-            android:background="?attr/colorPrimary"
-            app:elevation="16dp"
-            app:itemIconTint="@color/color_navigation_item"
-            app:itemTextColor="@color/color_navigation_item"
-            app:labelVisibilityMode="auto"
-            app:menu="@menu/menu_bottom_nav" />
-
     </LinearLayout>
 
 

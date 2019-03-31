@@ -2,6 +2,7 @@ package g3.coveventry.events;
 
 
 import android.Manifest;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -15,6 +16,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -76,8 +79,8 @@ import static g3.coveventry.events.FetchAddressIntentService.RESULT_CITY_KEY;
 public class EventsFragment extends Fragment {
     RecyclerView recyclerView;
     SupportMapFragment mapFragment;
-    EditText SearchText;
-    Button buttonSwap, Search;
+    EditText edtTxtSearch;
+    Button buttonSwap;
 
     TwitterAPI twitterApi;
 
@@ -88,14 +91,15 @@ public class EventsFragment extends Fragment {
     String city;
     ArrayList<Event> events = new ArrayList<>();
 
+    String filterText;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_events, container, false);
 
         buttonSwap = view.findViewById(R.id.eventlist_list_swap);
-        Search = view.findViewById(R.id.Search);
-        SearchText = view.findViewById(R.id.SearchText);
+        edtTxtSearch = view.findViewById(R.id.eventlist_searchtext);
 
         recyclerView = view.findViewById(R.id.eventlist_list_view);
         mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.eventlist_map_view);
@@ -129,17 +133,23 @@ public class EventsFragment extends Fragment {
 
         }
 
-        Search.setOnClickListener(new View.OnClickListener() {
+
+        filterText = "";
+        edtTxtSearch.addTextChangedListener(new TextWatcher() {
             @Override
-            public void onClick(View v) {
-                String inp = SearchText.getText().toString();
-                if(inp == "")
-                {
-                   loadEvents();
-                }
-                else{
-                    loadSearchEvents();
-                }
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterText = s.toString();
+                recyclerView.getAdapter().notifyDataSetChanged();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
             }
         });
 
@@ -159,6 +169,8 @@ public class EventsFragment extends Fragment {
                         googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100))
                 );
 
+                edtTxtSearch.setVisibility(View.GONE);
+
             } else {
                 // Show recycler view and hide map
                 recyclerView.setVisibility(View.VISIBLE);
@@ -168,8 +180,31 @@ public class EventsFragment extends Fragment {
                 recyclerView.setHasFixedSize(true);
                 recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
                 recyclerView.setAdapter(new EventsAdapter());
+
+                edtTxtSearch.setVisibility(View.VISIBLE);
             }
         });
+
+        mapFragment.getMapAsync(googleMap ->
+                googleMap.setOnMarkerClickListener(marker ->
+                {
+                    Dialog dialog = new Dialog(getContext());
+                    dialog.setContentView(R.layout.dialog_event);
+
+                    ((TextView) dialog.findViewById(R.id.dialogevent_hostName))
+                            .setText(events.get(Integer.valueOf(marker.getTitle())).hostName);
+
+                    ((TextView) dialog.findViewById(R.id.dialogevent_description))
+                            .setText(events.get(Integer.valueOf(marker.getTitle())).description);
+
+                    ((CovImageView) dialog.findViewById(R.id.dialogevent_image))
+                            .setImageBitmap(events.get(Integer.valueOf(marker.getTitle())).image);
+
+                    dialog.show();
+
+                    return true;
+                })
+        );
 
         // Check if was just open or is rebuilding from background
         if (savedInstanceState == null) {
@@ -192,22 +227,23 @@ public class EventsFragment extends Fragment {
             // so the array might be changed in the meantime, so have to be added right before updating the views
             events.addAll(newEvents);
 
-            for (Event event : newEvents)
-                mapFragment.getMapAsync(googleMap -> {
+            mapFragment.getMapAsync(googleMap -> {
+                for (int i = 0; i < newEvents.size(); i++) {
                     // Add a marker for the event
                     googleMap.addMarker(new MarkerOptions()
-                            .position(event.location != null ? event.location : userLocation)
-                            .title(event.hostName)
-                            .snippet(event.description)
+                            .position(newEvents.get(i).location != null ? newEvents.get(i).location : userLocation)
+                            .title(String.valueOf(events.size() - 1 + i))
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
 
                     // If location is set, extend the markers bounds
-                    if (event.location != null)
-                        markerBounds.include(event.location);
+                    if (newEvents.get(i).location != null)
+                        markerBounds.include(newEvents.get(i).location);
 
                     // Move camera to show all markers
                     googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100));
-                });
+                }
+
+            });
         } else {
             // Notify recycler view of data changed
             // post() will allow the recycler view to complete what it's doing before trying to update again
@@ -241,8 +277,7 @@ public class EventsFragment extends Fragment {
                 // Add a marker for the event
                 googleMap.addMarker(new MarkerOptions()
                         .position(newEvent.location != null ? newEvent.location : userLocation)
-                        .title(newEvent.hostName)
-                        .snippet(newEvent.description)
+                        .title(String.valueOf(events.size() + 1))
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
                 // If location is set, extend the markers bounds
@@ -342,89 +377,6 @@ public class EventsFragment extends Fragment {
         });
     }
 
-
-    private void loadSearchEvents() {
-        // Reset events list and marker bounds
-        events.clear();
-
-        // Initiate marker bound builder
-        markerBounds = new LatLngBounds.Builder();
-
-        // Set the user location inside the marker bounds
-        markerBounds.include(userLocation);
-
-        // Load events from database
-        Database.getInstance().getEvents(Calendar.getInstance().getTime(), new CallbackDBResults<ArrayList<Event>>() {
-            @Override
-            public void connectionSuccessful(ArrayList<Event> results) {
-                // Notify views
-                for (int i = 0; i < results.size(); i++) {
-                    String resultName = results.get(i).title;
-                    String inpsearch = SearchText.getText().toString();
-                    boolean isFound = resultName.contains(inpsearch);
-                    // Notify views
-                    if (isFound == true) {
-                        //results.remove(i);
-                    }
-                }
-                // Notify views
-                if (!results.isEmpty())
-                    notifyEventRangeAdded(results);
-            }
-
-            @Override
-            public void connectionFailed(String message) {
-                Log.e("AppLog", message);
-                Toast.makeText(getContext(), "Error retrieving from database", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-
-        // Load events from twitter
-        // Set date formatting for twitter API
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-
-        // Create twitter request for tweets data
-       /* Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
-                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
-                        "filter:links -filter:retweets since:" + simpleDateFormat.format(Calendar.getInstance().getTime()),
-                new Geocode(userLocation.latitude, userLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
-                null, 100, null, null, null, true);*/
-
-        // TODO: TESTING
-        Call<Search> call = twitterApi.searchTweets("(drinks OR shots) OR (nightclub OR club) OR prize OR prize OR admission " +
-                        "OR \"live set\" tonight -meeting -i (-courses -tea -table) (-proceedings -presentation) " +
-                        "filter:links -filter:retweets",
-                new Geocode(userLocation.latitude, userLocation.longitude, 50, Geocode.Distance.KILOMETERS), null, null,
-                null, 100, null, null, null, true);
-
-        // Callback to read retrieved data
-        call.enqueue(new Callback<Search>() {
-            @Override
-            public void onResponse(@NonNull Call<Search> call, @NonNull Response<Search> response) {
-                if (response.body() != null && response.body().tweets.size() > 0)
-                    for (Tweet tweet : response.body().tweets) {
-                        // Filter out tweets that user location is not coventry
-                        // Run an AsyncTask to check events location
-                        if (tweet.user.location.toLowerCase().contains(city.toLowerCase()))
-                            new FormatEvent(EventsFragment.this, userLocation).execute(tweet);
-
-                    }
-
-
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<Search> call, @NonNull Throwable t) {
-                // On failure log error
-                Toast.makeText(getContext(), "Error retrieving from Twitter", Toast.LENGTH_SHORT).show();
-                t.printStackTrace();
-            }
-        });
-    }
-
-
-
     /**
      * Adapter for the recycler view to show the tweets appropriately
      */
@@ -436,8 +388,8 @@ public class EventsFragment extends Fragment {
         final class EventsViewHolder extends RecyclerView.ViewHolder {
             private TextView hostName;
             private TextView description;
-            private TextView location;
             private CovImageView image;
+            private RecyclerView.LayoutParams params;
 
             /**
              * Constructor, find views inside view for data to be bound later
@@ -449,8 +401,21 @@ public class EventsFragment extends Fragment {
 
                 hostName = itemView.findViewById(R.id.eventlistitem_host_name);
                 description = itemView.findViewById(R.id.eventlistitem_description);
-                location = itemView.findViewById(R.id.eventlistitem_location);
                 image = itemView.findViewById(R.id.eventlistitem_image);
+
+                params = (RecyclerView.LayoutParams) itemView.getLayoutParams();
+            }
+
+            void setVisible(Boolean visible) {
+                if (visible) {
+                    this.itemView.setVisibility(View.VISIBLE);
+
+                    this.itemView.setLayoutParams(params);
+                } else {
+                    this.itemView.setVisibility(View.GONE);
+
+                    this.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
+                }
             }
         }
 
@@ -477,27 +442,30 @@ public class EventsFragment extends Fragment {
             // Bind data to the current view holder
             Event event = events.get(position);
 
-            viewHolder.hostName.setText(event.hostName);
-            viewHolder.description.setText(event.description);
+            if (filterText.isEmpty() || event.hostName.contains(filterText.toLowerCase()) ||
+                    event.description.contains(filterText.toLowerCase()) ||
+                    event.title.contains(filterText.toLowerCase()) ||
+                    event.postCode.contains(filterText.toLowerCase()) ||
+                    event.venue.contains(filterText.toLowerCase())) {
+                viewHolder.setVisible(true);
 
-            if (event.location != null)
-                viewHolder.location.setText(String.format(Locale.getDefault(), "%.4f , %.4f", event.location.latitude, event.location.longitude));
-
-            else
-                viewHolder.location.setText("Location");
+                viewHolder.hostName.setText(event.hostName);
+                viewHolder.description.setText(event.description);
 
 
-            if (event.image != null)
-                viewHolder.image.setImageBitmap(event.image);
+                if (event.image != null)
+                    viewHolder.image.setImageBitmap(event.image);
 
-            else
-                viewHolder.image.setImageDrawable(R.drawable.ic_event_placeholder, Objects.requireNonNull(getActivity()).getTheme());
+                else
+                    viewHolder.image.setImageDrawable(R.drawable.ic_event_placeholder, Objects.requireNonNull(getActivity()).getTheme());
 
-            //TODO: Allow to click on event to open more details
-            /*viewHolder.itemView.setOnClickListener(view -> {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(tweet.entities.media.get(0).expandedUrl));
-                startActivity(intent);
-            });*/
+                //TODO: Allow to click on event to open more details
+                /*viewHolder.itemView.setOnClickListener(view -> {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(tweet.entities.media.get(0).expandedUrl));
+                    startActivity(intent);
+                });*/
+            } else
+                viewHolder.setVisible(false);
         }
 
 
