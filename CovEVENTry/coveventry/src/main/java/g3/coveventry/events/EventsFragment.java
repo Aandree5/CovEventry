@@ -235,7 +235,7 @@ public class EventsFragment extends Fragment {
                     googleMap.addMarker(new MarkerOptions()
                             .position(eventLoc)
                             .title(String.valueOf(events.size() - newEvents.size() + i)) // i is indexed at 0, so no need to decrease 1 from size()
-                            .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
+                            .icon(BitmapDescriptorFactory.fromResource(R.drawable.img_marker_general)));
 
                     // Extend the markers bounds
                     markerBounds.include(eventLoc);
@@ -281,7 +281,7 @@ public class EventsFragment extends Fragment {
                 googleMap.addMarker(new MarkerOptions()
                         .position(eventLoc)
                         .title(String.valueOf(events.size() - 1)) // Otherwise would be out of bounds
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                        .icon(BitmapDescriptorFactory.fromResource(R.drawable.img_marker_general)));
 
                 // Extend the markers bounds
                 markerBounds.include(eventLoc);

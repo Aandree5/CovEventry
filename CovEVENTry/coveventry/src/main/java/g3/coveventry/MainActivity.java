@@ -77,13 +77,6 @@ public class MainActivity extends AppCompatActivity {
                 return false;
 
             switch (menuItem.getItemId()) {
-                case R.id.nav_home:
-                    toolbar.setTitle(R.string.app_name);
-                    getSupportFragmentManager().beginTransaction()
-                            .replace(R.id.fragment_container, new HomeFragment())
-                            .commit();
-                    break;
-
                 case R.id.nav_events:
                     toolbar.setTitle("Events");
                     getSupportFragmentManager().beginTransaction()
@@ -154,10 +147,10 @@ public class MainActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             // Load default fragment on start up
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
+                    .replace(R.id.fragment_container, new EventsFragment())
                     .commit();
 
-            navigationView.setCheckedItem(R.id.nav_home);
+            navigationView.setCheckedItem(R.id.nav_events);
         }
 
         // Request needed permission if user didn't given them yet
