@@ -93,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
 
                 case R.id.nav_AddEvent:
-                    toolbar.setTitle("AddEvent");
+                    toolbar.setTitle("Add Event");
                     getSupportFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, new AddEventFragment())
                             .commit();
