@@ -229,15 +229,16 @@ public class EventsFragment extends Fragment {
 
             mapFragment.getMapAsync(googleMap -> {
                 for (int i = 0; i < newEvents.size(); i++) {
+                    LatLng eventLoc = newEvents.get(i).location != null ? newEvents.get(i).location : getRandomDefaultLocation();
+
                     // Add a marker for the event
                     googleMap.addMarker(new MarkerOptions()
-                            .position(newEvents.get(i).location != null ? newEvents.get(i).location : userLocation)
-                            .title(String.valueOf(events.size() - 1 + i))
+                            .position(eventLoc)
+                            .title(String.valueOf(events.size() - newEvents.size() + i)) // i is indexed at 0, so no need to decrease 1 from size()
                             .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN)));
 
-                    // If location is set, extend the markers bounds
-                    if (newEvents.get(i).location != null)
-                        markerBounds.include(newEvents.get(i).location);
+                    // Extend the markers bounds
+                    markerBounds.include(eventLoc);
 
                     // Move camera to show all markers
                     googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100));
@@ -254,7 +255,7 @@ public class EventsFragment extends Fragment {
                         events.addAll(newEvents);
 
                         // Notify the recycler view
-                        Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - 1 - newEvents.size(), newEvents.size());
+                        Objects.requireNonNull(recyclerView.getAdapter()).notifyItemRangeInserted(events.size() - newEvents.size(), newEvents.size());
                     }
             );
         }
@@ -274,15 +275,16 @@ public class EventsFragment extends Fragment {
             events.add(newEvent);
 
             mapFragment.getMapAsync(googleMap -> {
+                LatLng eventLoc = newEvent.location != null ? newEvent.location : getRandomDefaultLocation();
+
                 // Add a marker for the event
                 googleMap.addMarker(new MarkerOptions()
-                        .position(newEvent.location != null ? newEvent.location : userLocation)
-                        .title(String.valueOf(events.size() + 1))
+                        .position(eventLoc)
+                        .title(String.valueOf(events.size() - 1)) // Otherwise would be out of bounds
                         .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
-                // If location is set, extend the markers bounds
-                if (newEvent.location != null)
-                    markerBounds.include(newEvent.location);
+                // Extend the markers bounds
+                markerBounds.include(eventLoc);
 
                 // Move camera to show all markers
                 googleMap.animateCamera(CameraUpdateFactory.newLatLngBounds(markerBounds.build(), 100));
@@ -376,6 +378,13 @@ public class EventsFragment extends Fragment {
             }
         });
     }
+
+
+    private LatLng getRandomDefaultLocation() {
+        return new LatLng(userLocation.latitude + (Math.random() % 0.01d - 0.005d),
+                userLocation.longitude + (Math.random() % 0.01d - 0.005d));
+    }
+
 
     /**
      * Adapter for the recycler view to show the tweets appropriately
